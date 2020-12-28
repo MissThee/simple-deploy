@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "watch": "tsc --watch",
-    "default": "node bin/deploy-cli.js -e thisIsATestParam asd",
+    "default": "node bin/deploy-cli.js -e dev",
     "init": "node bin/deploy-cli.js init",
     "deploy": "node bin/deploy-cli.js deploy -e thisIsATestParam"
   },

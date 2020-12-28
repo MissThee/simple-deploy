@@ -38,7 +38,7 @@ program.command('deploy', { isDefault: true })
     .option('-e, --environment <environment_key...>', 'declare environment')
     .action(function (opts) {
     deploy_1.default(opts.environment);
-    console.log('部署deploy', '输出参opts.environment', opts.environment);
+    // console.log('部署deploy', '输出参opts.environment', opts.environment)
 });
 program.parse(process.argv);
 //# sourceMappingURL=deploy-cli.js.map

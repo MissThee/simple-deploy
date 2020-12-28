@@ -7,7 +7,7 @@
 	"env": {
 		"dev": {
 			"project": {
-				"projectBuildScript": "tsc --watch"
+				"projectBuildScript": "tsc"
 			},
 			"server": {
 				"serverHost": "",

@@ -3,7 +3,7 @@ import minimist from 'minimist'
 import fs from 'fs'
 import path from 'path'
 import init from '../lib/init'
-import deploy from '../lib/deploy'
+import deploy from "../lib/deploy";
 
 // console.log('process.env', process.env)
 // 解析命令内容，执行命令：node deploy-cli.js deploy --mode prod
@@ -22,7 +22,6 @@ const packageJsonFilePath = `${path.join(process.cwd())}/package.json`
 const packageJsonFile = fs.existsSync(packageJsonFilePath) ? require(packageJsonFilePath) : {}
 import {Command} from 'commander'
 import {configFilePath} from '../global/param'
-import deploy from "../lib/deploy";
 
 const program = new Command();
 program
@@ -39,7 +38,7 @@ program.command('deploy', {isDefault: true})
     .option('-e, --environment <environment_key...>', 'declare environment')
     .action((opts: any) => {
         deploy(opts.environment)
-        console.log('部署deploy', '输出参opts.environment', opts.environment)
+        // console.log('部署deploy', '输出参opts.environment', opts.environment)
     })
 
 program.parse(process.argv)
