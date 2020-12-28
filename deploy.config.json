@@ -1,0 +1,23 @@
+{
+	"local": {
+		"projectName": "deploy-cli",
+		"sshPrivateKeyPath": "C:\\Users\\mateng\\.ssh\\id_rsa",
+		"sshPassphrase": ""
+	},
+	"env": {
+		"dev": {
+			"project": {
+				"projectBuildScript": "tsc --watch"
+			},
+			"server": {
+				"serverHost": "",
+				"serverPort": 22,
+				"serverUsername": "root",
+				"serverPassword": ""
+			},
+			"fileMap": {
+				"dist": "//zzxc/a/a/a"
+			}
+		}
+	}
+}
