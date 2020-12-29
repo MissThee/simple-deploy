@@ -15,7 +15,7 @@ declare interface DeployConfigEnv {
         serverPassword?: string
     },
     fileMap: {
-        [projectPath: string]: [deployPathPath: string]
+        [projectPath: string]: string
     }
 }
 

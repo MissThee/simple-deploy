@@ -21,7 +21,7 @@ import deploy from "../lib/deploy";
 const packageJsonFilePath = `${path.join(process.cwd())}/package.json`
 const packageJsonFile = fs.existsSync(packageJsonFilePath) ? require(packageJsonFilePath) : {}
 import {Command} from 'commander'
-import {configFilePath} from '../global/param'
+import {configFilePath} from '../utils/global'
 
 const program = new Command();
 program

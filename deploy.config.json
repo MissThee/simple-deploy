@@ -10,13 +10,29 @@
 				"projectBuildScript": "tsc"
 			},
 			"server": {
-				"serverHost": "",
-				"serverPort": 22,
+				"serverHost": "39.100.142.223",
+				"serverPort": 9777,
 				"serverUsername": "root",
 				"serverPassword": ""
 			},
 			"fileMap": {
-				"dist": "//zzxc/a/a/a"
+				"dist": "/data/www/lighttpd/bmwcysp/video/test",
+				"dist1/index.html": "/data/www/lighttpd/bmwcysp/video/test1"
+			}
+		},
+		"test": {
+			"project": {
+				"projectBuildScript": "tsc"
+			},
+			"server": {
+				"serverHost": "39.100.142.223",
+				"serverPort": 9777,
+				"serverUsername": "root",
+				"serverPassword": ""
+			},
+			"fileMap": {
+				"dist": "/data/www/lighttpd/bmwcysp/video/test",
+				"dist1/index.html": "/data/www/lighttpd/bmwcysp/video/test1"
 			}
 		}
 	}

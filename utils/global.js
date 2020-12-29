@@ -7,4 +7,4 @@ exports.configFilePath = exports.configFileFullName = void 0;
 var path_1 = __importDefault(require("path"));
 exports.configFileFullName = 'deploy.config.json';
 exports.configFilePath = path_1.default.join(process.cwd(), exports.configFileFullName);
-//# sourceMappingURL=param.js.map
+//# sourceMappingURL=global.js.map

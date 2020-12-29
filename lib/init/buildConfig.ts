@@ -25,7 +25,7 @@ const inquirerLocalConfig = [
         type: 'input',
         name: 'sshPrivateKeyPath',
         message: lang('sshPrivateKeyPath'),
-        default: path.join(os.homedir(), '/.ssh/id_rsa')
+        default: '~/.ssh/id_rsa'
     },
     {
         type: 'password',
@@ -148,7 +148,8 @@ const inquirerFileMapConfig = [
         name: 'projectDistPath',
         message: lang('projectDistPath'),
         default: 'dist',
-        when: ((answer: any) => answer.isSingleProjectDistPath)
+        when: ((answer: any) => answer.isSingleProjectDistPath),
+        filter:((input:string)=>path.normalize(input))
     },
     {
         type: 'input',
@@ -156,8 +157,9 @@ const inquirerFileMapConfig = [
         message: lang('serverDeployPath') + ' (' + lang('Absolute path') + '. ' + lang('At least two levels of directory') + ')',
         when: ((answer: any) => answer.isSingleProjectDistPath),
         validate: (input: string) => {
-            return input.match(/^\/.+?\/.+?/) !== null
-        }
+            return path.normalize(input).replace(/\\/g,'/').match(/^\/.+?\/.+?/) !== null
+        },
+        filter:((input:string)=>path.normalize(input))
     },
     {
         type: 'confirm',

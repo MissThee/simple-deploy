@@ -1,55 +1,148 @@
 import ora from "ora";
 import lang from "../../lang";
 import chalk from "chalk";
-import {configFilePath} from "../../global/param";
+import {configFilePath} from "../../utils/global";
 import {NodeSSH} from 'node-ssh';
 import path from 'path';
 import fs from 'fs';
 import inquirer from 'inquirer'
 import childProcess from "child_process";
 import archiver from 'archiver'
-import {rejects} from "assert";
+import os from "os";
 
 const ssh = new NodeSSH()
 const maxBuffer = 5000 * 1024
+const currentTimestamp = '_' + Date.now()
+const deployLocalTmpPath = '.deployTmp' + currentTimestamp
+let zipFileIndex = 0
 
+class SimpleSpinner {
+    spinner = ora()
 
-// 任务列表
-let taskList
+    start(...value: string[]) {
+        this.spinner.start(value.map(item => lang(item)).join(''))
+    }
+
+    succeed(...value: string[]) {
+        this.spinner.succeed(value.map(item => lang(item)).join(''))
+    }
+
+    fail(err: any, ...value: string[]) {
+        this.spinner.fail(value.map(item => lang(item)).join(''))
+        console.log('' + err)
+    }
+
+    info(...value: string[]) {
+        this.spinner.info(value.map(item => lang(item)).join(''))
+    }
+}
+
+const ss = new SimpleSpinner()
+
 // 是否确认部署
-const confirmDeploy = () => {
+const confirmDeployTask = (param: string[]) => {
     return inquirer.prompt([
         {
             type: 'confirm',
             name: 'confirm',
-            message: lang('sure to deploy') + ' ?',
+            message: lang('sure to deploy') + ' ' + chalk.magenta.bold(param.join(',')) + ' ?',
         }
     ])
 }
-
-// 检查环境参数是否正确
-const checkEnvParam = (config: DeployConfig, ...envKeys: string[]) => {
-    const spinner = ora(lang('Checking')).start()
+const getCorrectConfigFileTask = async (configFilePath: string, envKeys: string[]) => {
+    ss.start('Check Configuration', ' ', chalk.magenta(configFilePath))
+    //检查配置文件存在
+    if (!fs.existsSync(configFilePath)) {
+        ss.fail('deploy configuration not exist')
+        return
+    }
+    // 获取配置文件
+    const configFile: DeployConfig = require(configFilePath)
+    // 检查启动参数中的环境参数是否在配置文件中出现
+    const errorParamArr: { param: string, reason: string }[] = []
     let isOk = true;
-    const unknownKeys: string[] = [];
     for (const envKey of envKeys) {
-        if (!(envKey in config.env)) {
-            unknownKeys.push(envKey)
+        if (envKey in configFile.env) {
+            const envNode = configFile.env[envKey]
+            const projectNode = envNode.project
+            if (!projectNode?.projectBuildScript) {
+                errorParamArr.push({
+                    param: 'env.' + envKey + 'project.projectBuildScript',
+                    reason: lang('not found or empty value')
+                })
+                isOk = false
+            }
+            const serverNode = envNode.server
+            if (!serverNode?.serverHost) {
+                errorParamArr.push({
+                    param: 'env.' + envKey + 'server.serverHost',
+                    reason: lang('not found or empty value')
+                })
+                isOk = false
+            }
+            if (isNaN(serverNode?.serverPort)) {
+                errorParamArr.push({
+                    param: 'env.' + envKey + 'server.serverPort',
+                    reason: lang('not found or NaN')
+                })
+                isOk = false
+            }
+            if (!serverNode?.serverUsername) {
+                errorParamArr.push({
+                    param: 'env.' + envKey + 'server.serverUsername',
+                    reason: lang('not found or empty value')
+                })
+                isOk = false
+            }
+            const fileMapNode = envNode.fileMap
+            if (!fileMapNode) {
+                errorParamArr.push({
+                    param: 'env.' + envKey + 'fileMap',
+                    reason: lang('not found or empty value')
+                })
+                isOk = false
+            } else {
+                for (const key of Object.keys(fileMapNode)) {
+                    if (!key) {
+                        errorParamArr.push({
+                            param: 'env.' + envKey + 'fileMap',
+                            reason: lang('empty key')
+                        })
+                        isOk = false
+                        continue
+                    }
+                    if (path.normalize(fileMapNode[key]).replace(/\\/g, '/').match(/^\/.+?\/.+?/) === null) {
+                        errorParamArr.push({
+                            param: 'env.' + envKey + 'fileMap.' + key,
+                            reason: lang('Absolute path') + '. ' + lang('At least two levels of directory')
+                        })
+                        isOk = false
+                    }
+                }
+            }
+        } else {
+            errorParamArr.push({
+                param: envKey,
+                reason: lang('unknown env')
+            })
             isOk = false
         }
     }
-    if (isOk) {
-        spinner.succeed(lang('Checking') + ' ' + lang('Done'))
-    } else {
-        spinner.fail('[' + unknownKeys.join(',') + '] not exist in ' + configFilePath)
+    if (!isOk) {
+        errorParamArr.forEach(item => {
+            ss.fail('Error Param', ' ', item.param, ' ', chalk.red(item.reason))
+        })
+        return;
     }
-    return isOk
-
+    await setTimeout(function () {
+    }, 1000)
+    ss.succeed()
+    return configFile
 }
 
 // 执行打包脚本
-const buildCode = async (script: string) => {
-    const spinner = ora(lang('Packing')).start()
+const buildCodeTask = async (script: string) => {
+    ss.start('Build Code', ' ', chalk.magenta(script))
     try {
         await new Promise<void>((resolve, reject) => {
             childProcess.exec(
@@ -59,78 +152,68 @@ const buildCode = async (script: string) => {
                     maxBuffer: maxBuffer
                 },
             ).on("error", err => { //命令本身报错，创建子进程报错
-                spinner.fail(lang('Packing') + ' ' + lang('Error'))
-                spinner.fail(err.message)
-                process.exit(1)
+                ss.fail(err.message)
+                process.exit()
             }).on("exit", (code, signal) => {
-                spinner.succeed(lang('Packing') + ' ' + lang('Done'))
+                ss.succeed()
                 resolve()
             }).stderr?.on('data', (data) => { //命令运行中报错
                 console.log('Error msg from process 2: ' + data);
             })
         })
     } catch (e) {
-        spinner.fail(lang('Packing') + ' ' + lang('Error'))
-        spinner.fail(e.message)
-        process.exit(1)
+        ss.fail(e.toString())
+        process.exit()
     }
 }
-
-// 递归创建目录
-const mkdirsSync = (dirname: string) => {
-    if (dirname === '' || fs.existsSync(dirname)) {
-        return true;
-    } else {
-        if (mkdirsSync(path.dirname(dirname))) {
-            fs.mkdirSync(dirname);
+// 使用fileMap的key生成本地zip文件全名
+const getFilePathByProjectPath = (projectPath: string) => {
+    return path.join(process.cwd(), deployLocalTmpPath, zipFileIndex++ + '_' + path.basename(projectPath) + '.zip')
+}
+// 归档Zip
+const buildZipTask = async (sourcePath: string) => {
+    ss.start('Zip Local File', ' ', chalk.magenta(sourcePath))
+    const mkdirsSync = (dirname: string) => {// 递归创建目录
+        if (dirname === '' || fs.existsSync(dirname)) {
             return true;
+        } else {
+            if (mkdirsSync(path.dirname(dirname))) {
+                fs.mkdirSync(dirname);
+                return true;
+            }
         }
     }
-}
-
-// 打包Zip
-const buildZip = async (sourcePath: string, outputPath?: string) => {
-    const spinner = ora(lang('Archiving')).start()
-    sourcePath = path.normalize(sourcePath)
-    const sourcePathBasename = path.basename(sourcePath)
-    const sourcePathPrePath = sourcePath.substring(0, sourcePath.indexOf(sourcePathBasename))
-    if (!outputPath) {
-        outputPath = path.join(sourcePathPrePath, 'deployTmp', sourcePathBasename)
-    } else {
-        outputPath = path.join(outputPath, sourcePathBasename)
+    // 目录是否存在
+    const outputPathAbsolute = path.join(process.cwd(), deployLocalTmpPath)
+    if (!fs.existsSync(outputPathAbsolute)) {
+        mkdirsSync(outputPathAbsolute)
     }
-    outputPath = path.normalize(outputPath)
-    const outputPathBasename = path.basename(outputPath)
-    const outputPathPrePath = outputPath.substring(0, outputPath.indexOf(outputPathBasename))
-    if (!fs.existsSync(path.join(process.cwd(), outputPathPrePath))) {
-        mkdirsSync(path.join(process.cwd(), outputPathPrePath))
-    }
-    const output = fs
-        .createWriteStream(path.join(process.cwd(), outputPath + '.zip'))
-        .on('error', (err) => {
-            spinner.fail(lang('Archiving') + ' ' + lang('Error'))
-            spinner.fail(err.message)
-            process.exit(1)
-        })
+    let outputFile = getFilePathByProjectPath(sourcePath)
     const archive = archiver('zip', {
         zlib: {level: 9}
     })
-    archive.on('error', (e) => {
-        spinner.fail(lang('Archiving') + ' ' + lang('Error'))
-        spinner.fail(e.message)
-        process.exit(1)
-    })
 
-    archive.pipe(output)
-    archive.directory(sourcePath, false)
+    const sourcePathStat = fs.statSync(sourcePath)
+    if (sourcePathStat.isFile()) {
+        archive.file(sourcePath, {name: path.basename(sourcePath)})
+    } else if (sourcePathStat.isDirectory()) {
+        archive.directory(sourcePath, false)
+    } else {
+        ss.fail(lang('unknown file type') + ': ' + sourcePath)
+        process.exit()
+    }
+    archive.pipe(fs.createWriteStream(outputFile))
     await archive.finalize()
-    spinner.succeed(lang('Archiving') + ' ' + lang('Done'))
-
+    ss.succeed()
+    return outputFile;
 }
 
 // 连接ssh
-const connectSSH = async (host: string, port: number, username: string, privateKey?: string, passphrase?: string, password?: string) => {
-    const spinner = ora(lang('SSH Connecting')).start()
+const connectSSHTask = async (host: string, port: number, username: string, privateKey?: string, passphrase?: string, password?: string) => {
+    ss.start('SSH Connect', ' ', chalk.magenta(host))
+    if (privateKey && privateKey.trimStart().startsWith('~')) {
+        privateKey = path.join(os.homedir(), privateKey.substring(privateKey.indexOf('~') + 1))
+    }
     try {
         let sshConfig = {
             host: host,
@@ -141,137 +224,167 @@ const connectSSH = async (host: string, port: number, username: string, privateK
             passphrase: passphrase,
             tryKeyboard: true,
         }
-        // if (!privateKey && !password) {
-        //     const answers = await inquirer.prompt([
-        //         {
-        //             type: 'password',
-        //             name: 'password',
-        //             message: lang('please input password')
-        //         }
-        //     ])
-        //     sshConfig.password = answers.password
-        // }
-        //
+
+        if (!privateKey && !password) {
+            const answers = await inquirer.prompt([
+                {
+                    type: 'password',
+                    name: 'password',
+                    message: lang('please input password')
+                }
+            ])
+            sshConfig.password = answers.password
+        }
+        !password && delete sshConfig.password
+        !privateKey && delete sshConfig.privateKey
+        !passphrase && delete sshConfig.passphrase
         // !privateKey && delete sshConfig.privateKey
         // !passphrase && delete sshConfig.passphrase
 
         await ssh.connect(sshConfig)
-        spinner.succeed(lang('SSH Connecting') + ' ' + lang('Done'))
+        ss.succeed()
     } catch (e) {
-        spinner.fail(lang('SSH Connecting') + ' ' + lang('Error'))
-        spinner.fail(e.message)
-        process.exit(1)
+        ss.fail(e.toString())
+        process.exit()
     }
 }
 
 // 上传本地文件
-const uploadLocalFile = async (localPath: string, remotePath: string) => {
-    const spinner = ora(lang('Uploading')).start()
+const uploadLocalFileTask = async (localFile: string, remotePath: string) => {
+    ss.start('Upload File', ' ', chalk.magenta(localFile))
+    const remoteFile = path.join(remotePath, path.basename(localFile))
     try {
-        localPath = path.join(process.cwd(), localPath)
         await ssh.putFile(
-            localPath,
-            remotePath,
+            localFile,
+            remoteFile,
             null,
             {
                 concurrency: 1
             }
         )
-        spinner.succeed(lang('Uploading') + ' ' + lang('Done'))
+        ss.succeed()
+        return remoteFile
     } catch (e) {
-        spinner.fail(lang('Uploading') + ' ' + lang('Error'))
-        spinner.fail(e.message)
-        process.exit(1)
+        ss.fail(e.toString())
+        process.exit()
     }
 }
 
 // 删除远程文件
-const removeRemoteFile = async (remotePath: string) => {
-    const spinner = ora(lang('Cleaning')).start()
+const removeRemoteFileTask = async (remotePath: string) => {
+    ss.start('Clean')
     try {
         await ssh.execCommand('rm -rf ' + remotePath)
-        spinner.succeed(lang('Cleaning') + ' ' + lang('Done'))
+        ss.succeed()
     } catch (e) {
-        spinner.fail(lang('Cleaning') + ' ' + lang('Error'))
-        spinner.fail(e.message)
-        process.exit(1)
+        ss.fail(e.toString())
+        process.exit()
     }
 }
 
 // 解压远程文件
-const unzipRemoteFile = async (remotePath: string) => {
-    const spinner = ora(lang('Unpacking')).start()
+const unzipRemoteFile = async (remoteFile: string) => {
+    ss.start('Unzip Remote File', ' ', chalk.magenta(remoteFile))
+    if (!remoteFile.endsWith('.zip')) {
+        ss.fail(lang('not found zip file'))
+        process.exit()
+    }
+    if (path.normalize(remoteFile).replace(/\\/g, '/').match(/^\/.+?\/.+?/) === null) {
+        ss.fail(lang('danger path param'))
+        process.exit()
+    }
+    //执行linux命令前将路径转为 linux分隔符
+    remoteFile = path.normalize(remoteFile).replace(/\\/g, '/')
+    const remotePath = remoteFile.substring(0, remoteFile.lastIndexOf(path.basename(remoteFile)))
     try {
-        const remoteFileName = remotePath
-        await ssh.execCommand(
-            `unzip -o ${remotePath} -d ${remotePath} && rm -rf ${remotePath}`
-        )
-        spinner.succeed(lang('Unpacking') + ' ' + lang('Done'))
+        const sshCommand = `unzip -o ${remoteFile} -d ${remotePath} && rm -rf ${remoteFile}`
+        const result = await ssh.execCommand(sshCommand)
+        if (result.code) {
+            ss.fail(result.stderr)
+            process.exit()
+        }
+        ss.succeed()
     } catch (e) {
-        spinner.fail(lang('Cleaning') + ' ' + lang('Error'))
-        spinner.fail(e.message)
-        process.exit(1)
+        ss.fail(e.toString())
+        process.exit()
     }
 }
 
 // 删除本地打包文件
 const removeLocalFile = (localPath: string) => {
-    const spinner = ora(lang('Deleting')).start()
     localPath = path.join(process.cwd(), localPath)
-    const remove = (path: string) => {
-        if (fs.existsSync(path)) {
-            fs.readdirSync(path).forEach((file) => {
-                let currentPath = `${path}/${file}`
-                if (fs.statSync(currentPath).isDirectory()) {
-                    remove(currentPath)
-                } else {
-                    fs.unlinkSync(currentPath)
-                }
-            })
-            fs.rmdirSync(path)
-        }
-    }
+    ss.start('Clean Local Tmp', ' ', chalk.magenta(localPath))
+    return new Promise<void>((resolve, reject) => {
+        fs.rm(localPath, {recursive: true, force: true}, (err) => {
+            if (err) {
+                ss.fail(err.message)
+                process.exit()
+            } else {
+                ss.succeed()
+                resolve()
+            }
+        })
+    })
 
-    remove(localPath)
-    fs.unlinkSync(`${localPath}.zip`)
-    spinner.succeed(lang('Deleting') + ' ' + lang('Done'))
 }
 
 // 断开ssh
 const disconnectSSH = () => {
+    ss.start('SSH Disconnect')
     ssh.dispose()
+    ss.succeed()
 }
 
 const deploy = async (param: string[]) => {
-    //部署动作确认
-    if (!(await confirmDeploy()).confirm) {
-        return
-    }
-    //检查配置文件存在
-    if (!fs.existsSync(configFilePath)) {
-        ora().fail(lang('deploy configuration not exist'))
-        return
-    }
-    // 获取配置文件
-    const configFile: DeployConfig = require(configFilePath)
-    // 检查参数的环境是否存在于配置文件中
-    if (!checkEnvParam(configFile, ...param)) {
-        return
-    }
-
-
-    for (const envKey of param) {
-        let currentEnv = configFile.env[envKey]
-        //执行打包命令
-        await buildCode(currentEnv.project.projectBuildScript)
-        //执行归档命令
-        const tmpPath = '/deployTmp'
-        for (const localPath of Object.keys(currentEnv.fileMap)) {
-            buildZip(localPath, tmpPath)
+    try {
+        // 部署确认
+        if (!(await confirmDeployTask(param)).confirm) {
+            return
         }
-        //删除临时文件
-        removeLocalFile(tmpPath)
+        // 检查配置文件
+        const configFile = await getCorrectConfigFileTask(configFilePath, param)
+        if (!configFile) {
+            return
+        }
+        for (const envKey of param) {
+            ss.info(chalk.bgBlue.bold(' ' + envKey + ' '))
+            let currentEnv = configFile.env[envKey]
+            // 执行打包命令
+            await buildCodeTask(currentEnv.project.projectBuildScript)
+            // 执行归档命令
+            const zipTmpFileMap: { [projectPath: string]: string } = {}
+            for (const projectPath of Object.keys(currentEnv.fileMap)) {
+                zipTmpFileMap[projectPath] = await buildZipTask(projectPath)
+            }
+            //连接ssh
+            await connectSSHTask(
+                currentEnv.server.serverHost,
+                currentEnv.server.serverPort,
+                currentEnv.server.serverUsername,
+                configFile.local.sshPrivateKeyPath,
+                configFile.local.sshPassphrase,
+                currentEnv.server.serverPassword
+            )
+            const remoteZipFileArr = []
+            //上传文件
+            for (const projectPath of Object.keys(currentEnv.fileMap)) {
+                remoteZipFileArr.push(await uploadLocalFileTask(zipTmpFileMap[projectPath], currentEnv.fileMap[projectPath]))
+            }
+            //解压远程文件
+            for (const remoteZipFile of remoteZipFileArr) {
+                await unzipRemoteFile(remoteZipFile)
+            }
+        }
+        disconnectSSH()
+        //删除本地临时文件
+        await removeLocalFile(deployLocalTmpPath)
+        ss.succeed(chalk.bgGreen.bold(lang('All Done')))
+    } catch (e) {
+        ss.fail(e)
+        //删除本地临时文件
+        await removeLocalFile(deployLocalTmpPath)
     }
+    process.exit()
 }
 
 export default deploy

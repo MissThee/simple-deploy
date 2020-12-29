@@ -23,14 +23,14 @@ var deploy_1 = __importDefault(require("../lib/deploy"));
 var packageJsonFilePath = path_1.default.join(process.cwd()) + "/package.json";
 var packageJsonFile = fs_1.default.existsSync(packageJsonFilePath) ? require(packageJsonFilePath) : {};
 var commander_1 = require("commander");
-var param_1 = require("../global/param");
+var global_1 = require("../utils/global");
 var program = new commander_1.Command();
 program
     .version(packageJsonFile.version, '-v, --version', 'current version');
 program.command('init')
     .description('init deploy configuration')
     .action(function () {
-    init_1.default(param_1.configFilePath);
+    init_1.default(global_1.configFilePath);
 });
 //注意此处不能直接链式直接使用.command，会被认为是上一个command的子指令。需要重新使用program添加.command指令
 program.command('deploy', { isDefault: true })
