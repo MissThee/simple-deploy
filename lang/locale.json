@@ -20,8 +20,8 @@
   "projectBuildCustomScript": {
     "zh-CN": "项目自定义构建指令"
   },
-  "projectDistPath": {
-    "zh-CN": "项目输出目录"
+  "projectFileOrPath": {
+    "zh-CN": "项目文件或目录"
   },
   "serverHost": {
     "zh-CN": "服务器地址"
@@ -40,6 +40,9 @@
   },
   "isClearServerPathBeforeDeploy": {
     "zh-CN": "是否部署前清理服务器目录"
+  },
+  "isClearLocalDistFileAfterDeploy": {
+    "zh-CN": "是否部署后清理本地打包文件"
   },
   "Environment Configuration": {
     "zh-CN": "环境配置"

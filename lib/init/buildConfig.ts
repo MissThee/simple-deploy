@@ -1,6 +1,5 @@
 import inquirer from 'inquirer'
 import fs from 'fs'
-import os from 'os'
 import path from 'path'
 import lang from '../../lang'
 import chalk from 'chalk'
@@ -145,11 +144,11 @@ const inquirerFileMapConfig = [
     },
     {
         type: 'input',
-        name: 'projectDistPath',
-        message: lang('projectDistPath'),
+        name: 'projectFileOrPath',
+        message: lang('projectFileOrPath'),
         default: 'dist',
         when: ((answer: any) => answer.isSingleProjectDistPath),
-        filter:((input:string)=>path.normalize(input))
+        filter: ((input: string) => path.normalize(input))
     },
     {
         type: 'input',
@@ -157,18 +156,27 @@ const inquirerFileMapConfig = [
         message: lang('serverDeployPath') + ' (' + lang('Absolute path') + '. ' + lang('At least two levels of directory') + ')',
         when: ((answer: any) => answer.isSingleProjectDistPath),
         validate: (input: string) => {
-            return path.normalize(input).replace(/\\/g,'/').match(/^\/.+?\/.+?/) !== null
+            return path.normalize(input).replace(/\\/g, '/').match(/^\/.+?\/.+?/) !== null
         },
-        filter:((input:string)=>path.normalize(input))
+        filter: ((input: string) => path.normalize(input))
     },
+
+]
+// 部署路径设置（文件拷贝映射信息）
+const inquirerOtherConfig = [
     {
         type: 'confirm',
         name: 'isClearServerPathBeforeDeploy',
         message: lang('isClearServerPathBeforeDeploy'),
-        default: true,
+        default: false,
+    },
+    {
+        type: 'confirm',
+        name: 'isClearDistFileAfterDeploy',
+        message: lang('isClearDistFileAfterDeploy'),
+        default: false,
     }
 ]
-
 const buildConfig = async () => {
     const local = await inquirer.prompt(inquirerLocalConfig);
     const env: { [envKey: string]: DeployConfigEnv } = {}
@@ -177,7 +185,7 @@ const buildConfig = async () => {
         // 输出当前配置环境提示 dev/test/prod
         ora().info(chalk.blueBright(lang('Environment Configuration')) + chalk.yellow(": ") + chalk.bgGreen.bold(' ' + key + ' '))
         // 开始环境配置
-        const currentEnv = {
+        const currentEnv: DeployConfigEnv = {
             project: {
                 projectBuildScript: ""
             },
@@ -186,6 +194,10 @@ const buildConfig = async () => {
                 serverHost: "",
                 serverPort: 0,
                 serverUsername: ""
+            },
+            other: {
+                isClearServerPathBeforeDeploy: false,
+                isClearDistFileAfterDeploy: false
             }
         };
         {//.project
@@ -201,11 +213,14 @@ const buildConfig = async () => {
             currentEnv.server = await inquirer.prompt(inquirerServerConfig)
         }
         {//.fileMap
-            let fileMap = await inquirer.prompt(inquirerFileMapConfig)
-            if (fileMap.isSingleProjectDistPath) {
-                fileMap = {[fileMap.projectDistPath]: fileMap.serverDeployPath}
+            let fileMapConfig = await inquirer.prompt(inquirerFileMapConfig)
+            if (fileMapConfig.isSingleProjectDistPath) {
+                fileMapConfig = {[fileMapConfig.projectFileOrPath]: fileMapConfig.serverDeployPath}
             }
-            currentEnv.fileMap = fileMap;
+            currentEnv.fileMap = fileMapConfig;
+        }
+        {//.other
+            currentEnv.other = await inquirer.prompt(inquirerOtherConfig)
         }
         env[key] = currentEnv
     }

@@ -1,42 +1,20 @@
-import ora from "ora";
 import lang from "../../lang";
 import chalk from "chalk";
 import {configFilePath} from "../../utils/global";
 import {NodeSSH} from 'node-ssh';
 import path from 'path';
-import fs from 'fs';
+import fs, {promises as fsp} from 'fs';
 import inquirer from 'inquirer'
-import childProcess from "child_process";
+import childProcess, {ExecException} from "child_process";
 import archiver from 'archiver'
 import os from "os";
+import SimpleSpinner from './SimpleSpinner'
+import {isSafePath} from "../../utils/tools";
 
-const ssh = new NodeSSH()
 const maxBuffer = 5000 * 1024
 const currentTimestamp = '_' + Date.now()
 const deployLocalTmpPath = '.deployTmp' + currentTimestamp
 let zipFileIndex = 0
-
-class SimpleSpinner {
-    spinner = ora()
-
-    start(...value: string[]) {
-        this.spinner.start(value.map(item => lang(item)).join(''))
-    }
-
-    succeed(...value: string[]) {
-        this.spinner.succeed(value.map(item => lang(item)).join(''))
-    }
-
-    fail(err: any, ...value: string[]) {
-        this.spinner.fail(value.map(item => lang(item)).join(''))
-        console.log('' + err)
-    }
-
-    info(...value: string[]) {
-        this.spinner.info(value.map(item => lang(item)).join(''))
-    }
-}
-
 const ss = new SimpleSpinner()
 
 // 是否确认部署
@@ -45,17 +23,16 @@ const confirmDeployTask = (param: string[]) => {
         {
             type: 'confirm',
             name: 'confirm',
-            message: lang('sure to deploy') + ' ' + chalk.magenta.bold(param.join(',')) + ' ?',
+            message: lang('sure to deploy') + ' ' + chalk.magenta(param.join(',')) + ' ?',
         }
     ])
 }
-const getCorrectConfigFileTask = async (configFilePath: string, envKeys: string[]) => {
+
+// 检查配置文件
+const getCorrectConfigFileTask = async (configFilePath: string, envKeys: string[]): Promise<void | DeployConfig> => {
     ss.start('Check Configuration', ' ', chalk.magenta(configFilePath))
     //检查配置文件存在
-    if (!fs.existsSync(configFilePath)) {
-        ss.fail('deploy configuration not exist')
-        return
-    }
+    await fsp.access(configFilePath, fs.constants.F_OK)
     // 获取配置文件
     const configFile: DeployConfig = require(configFilePath)
     // 检查启动参数中的环境参数是否在配置文件中出现
@@ -80,7 +57,7 @@ const getCorrectConfigFileTask = async (configFilePath: string, envKeys: string[
                 })
                 isOk = false
             }
-            if (isNaN(serverNode?.serverPort)) {
+            if (Object.prototype.toString.call(serverNode?.serverPort) !== '[object Number]') {
                 errorParamArr.push({
                     param: 'env.' + envKey + 'server.serverPort',
                     reason: lang('not found or NaN')
@@ -129,13 +106,8 @@ const getCorrectConfigFileTask = async (configFilePath: string, envKeys: string[
         }
     }
     if (!isOk) {
-        errorParamArr.forEach(item => {
-            ss.fail('Error Param', ' ', item.param, ' ', chalk.red(item.reason))
-        })
-        return;
+        throw errorParamArr.map(item => lang('Error Param') + ' ' + chalk.magenta(item.param) + ' ' + chalk.red(item.reason)).join('\r\n')
     }
-    await setTimeout(function () {
-    }, 1000)
     ss.succeed()
     return configFile
 }
@@ -143,221 +115,207 @@ const getCorrectConfigFileTask = async (configFilePath: string, envKeys: string[
 // 执行打包脚本
 const buildCodeTask = async (script: string) => {
     ss.start('Build Code', ' ', chalk.magenta(script))
-    try {
-        await new Promise<void>((resolve, reject) => {
-            childProcess.exec(
-                script,
-                {
-                    cwd: process.cwd(),
-                    maxBuffer: maxBuffer
-                },
-            ).on("error", err => { //命令本身报错，创建子进程报错
-                ss.fail(err.message)
-                process.exit()
-            }).on("exit", (code, signal) => {
-                ss.succeed()
-                resolve()
-            }).stderr?.on('data', (data) => { //命令运行中报错
-                console.log('Error msg from process 2: ' + data);
-            })
-        })
-    } catch (e) {
-        ss.fail(e.toString())
-        process.exit()
+    if (script.length === 0) {
+        ss.succeed()
+        return
     }
+    await new Promise<void>((resolve, reject) => {
+        childProcess.exec(
+            script,
+            {
+                cwd: process.cwd(),
+                maxBuffer: maxBuffer
+            },
+            (error: ExecException | null, stdout: string, stderr: string) => {
+                if (error) {
+                    reject(error)
+                } else {
+                    ss.succeed()
+                    resolve()
+                }
+            }
+        )
+    })
 }
+
 // 使用fileMap的key生成本地zip文件全名
 const getFilePathByProjectPath = (projectPath: string) => {
     return path.join(process.cwd(), deployLocalTmpPath, zipFileIndex++ + '_' + path.basename(projectPath) + '.zip')
 }
-// 归档Zip
-const buildZipTask = async (sourcePath: string) => {
-    ss.start('Zip Local File', ' ', chalk.magenta(sourcePath))
-    const mkdirsSync = (dirname: string) => {// 递归创建目录
-        if (dirname === '' || fs.existsSync(dirname)) {
+const mkdirsSync = (dirname: string) => {// 递归创建目录
+    if (dirname === '' || fs.existsSync(dirname)) {
+        return true;
+    } else {
+        if (mkdirsSync(path.dirname(dirname))) {
+            fs.mkdirSync(dirname);
             return true;
-        } else {
-            if (mkdirsSync(path.dirname(dirname))) {
-                fs.mkdirSync(dirname);
-                return true;
-            }
         }
     }
-    // 目录是否存在
-    const outputPathAbsolute = path.join(process.cwd(), deployLocalTmpPath)
-    if (!fs.existsSync(outputPathAbsolute)) {
-        mkdirsSync(outputPathAbsolute)
-    }
-    let outputFile = getFilePathByProjectPath(sourcePath)
-    const archive = archiver('zip', {
-        zlib: {level: 9}
-    })
-
-    const sourcePathStat = fs.statSync(sourcePath)
+}
+// 创建临时存储目录
+const createFolderTask = async (filePath: string) => {
+    await mkdirsSync(filePath.substring(0, filePath.lastIndexOf(path.basename(filePath))))
+}
+// 归档Zip
+const buildZipTask = async (sourcePath: string, outputFile: string) => {
+    sourcePath = path.join(process.cwd(), sourcePath)
+    ss.start('Zip Local File', ' ', chalk.magenta(sourcePath))
+    const archive = archiver('zip', {zlib: {level: 9}})
+    const sourcePathStat = await fsp.stat(sourcePath)
     if (sourcePathStat.isFile()) {
         archive.file(sourcePath, {name: path.basename(sourcePath)})
     } else if (sourcePathStat.isDirectory()) {
         archive.directory(sourcePath, false)
     } else {
-        ss.fail(lang('unknown file type') + ': ' + sourcePath)
-        process.exit()
+        throw lang('unknown file type') + ': ' + sourcePath
     }
     archive.pipe(fs.createWriteStream(outputFile))
     await archive.finalize()
-    ss.succeed()
+    ss.succeedAppend(" ", chalk.yellow(lang('to')), ' ', chalk.magenta(path.normalize(outputFile)))
     return outputFile;
 }
-
+// 删除本地打包文件
+const removeFileTask = async (localPath: string) => {
+    localPath = path.join(process.cwd(), localPath)
+    ss.start('Clean Local Tmp', ' ', chalk.magenta(localPath))
+    await fsp.rm(localPath, {recursive: true, force: true})
+    ss.succeed()
+}
 // 连接ssh
-const connectSSHTask = async (host: string, port: number, username: string, privateKey?: string, passphrase?: string, password?: string) => {
+const sshConnectTask = async (host: string, port: number, username: string, privateKey?: string, passphrase?: string, password?: string) => {
     ss.start('SSH Connect', ' ', chalk.magenta(host))
     if (privateKey && privateKey.trimStart().startsWith('~')) {
         privateKey = path.join(os.homedir(), privateKey.substring(privateKey.indexOf('~') + 1))
     }
-    try {
-        let sshConfig = {
-            host: host,
-            port: port,
-            username: username,
-            password: password,
-            privateKey: privateKey,
-            passphrase: passphrase,
-            tryKeyboard: true,
-        }
-
-        if (!privateKey && !password) {
-            const answers = await inquirer.prompt([
-                {
-                    type: 'password',
-                    name: 'password',
-                    message: lang('please input password')
-                }
-            ])
-            sshConfig.password = answers.password
-        }
-        !password && delete sshConfig.password
-        !privateKey && delete sshConfig.privateKey
-        !passphrase && delete sshConfig.passphrase
-        // !privateKey && delete sshConfig.privateKey
-        // !passphrase && delete sshConfig.passphrase
-
-        await ssh.connect(sshConfig)
-        ss.succeed()
-    } catch (e) {
-        ss.fail(e.toString())
-        process.exit()
+    let sshConfig = {
+        host: host,
+        port: port,
+        username: username,
+        password: password,
+        privateKey: privateKey,
+        passphrase: passphrase,
+        tryKeyboard: true,
     }
-}
-
-// 上传本地文件
-const uploadLocalFileTask = async (localFile: string, remotePath: string) => {
-    ss.start('Upload File', ' ', chalk.magenta(localFile))
-    const remoteFile = path.join(remotePath, path.basename(localFile))
-    try {
-        await ssh.putFile(
-            localFile,
-            remoteFile,
-            null,
+    if (!privateKey && !password) {
+        const answers = await inquirer.prompt([
             {
-                concurrency: 1
+                type: 'password',
+                name: 'password',
+                message: lang('please input password')
             }
-        )
-        ss.succeed()
-        return remoteFile
-    } catch (e) {
-        ss.fail(e.toString())
-        process.exit()
+        ])
+        sshConfig.password = answers.password
     }
+    !password && delete sshConfig.password
+    !privateKey && delete sshConfig.privateKey
+    !passphrase && delete sshConfig.passphrase
+    const ssh = new NodeSSH()
+    await ssh.connect(sshConfig)
+    ss.succeed()
+    return ssh
 }
-
+// 上传文件
+const sshUploadFileTask = async (ssh: NodeSSH, localZipFile: string, remoteFile: string) => {
+    ss.start('Upload File', ' ', chalk.magenta(localZipFile))
+    await ssh.putFile(
+        path.normalize(localZipFile),
+        path.normalize(remoteFile),
+        null,
+        {
+            concurrency: 1
+        }
+    )
+    ss.succeedAppend(" ", chalk.yellow(lang('to')), ' ', chalk.magenta(path.normalize(remoteFile)))
+    return remoteFile
+}
 // 删除远程文件
-const removeRemoteFileTask = async (remotePath: string) => {
-    ss.start('Clean')
-    try {
-        await ssh.execCommand('rm -rf ' + remotePath)
+const sshRemoveFileTask = async (ssh: NodeSSH, ...remotePaths: string[]) => {
+    ss.start('Clean Remote File Or Path')
+    for (const remotePath of remotePaths) {
+        if (!isSafePath(remotePath)) {
+            throw lang('danger path param')
+        }
+        await ssh.execCommand(`rm -rf ${remotePath}`)
+    }
+    ss.succeed()
+}
+// 解压远程文件
+const sshUnzipFileTask = async (ssh: NodeSSH, ...remoteFiles: string[]) => {
+    for (let remoteFile of remoteFiles) {
+        ss.start('Unzip Remote File', ' ', chalk.magenta(remoteFile))
+        if (!remoteFile.endsWith('.zip')) {
+            throw lang('not found zip file')
+        }
+        if (!isSafePath(remoteFile)) {
+            throw lang('danger path param')
+        }
+        //执行linux命令前将路径转为 linux分隔符
+        remoteFile = path.normalize(remoteFile).replace(/\\/g, '/')
+        const remotePath = remoteFile.substring(0, remoteFile.lastIndexOf(path.basename(remoteFile)))
+        const sshCommand = `unzip -o ${remoteFile} -d ${remotePath} && rm -rf ${remoteFile}`
+        const result = await ssh.execCommand(sshCommand)
+        if (result.code) { //code === 0 is OK
+            throw result.stderr
+        }
         ss.succeed()
-    } catch (e) {
-        ss.fail(e.toString())
-        process.exit()
     }
 }
-
-// 解压远程文件
-const unzipRemoteFile = async (remoteFile: string) => {
-    ss.start('Unzip Remote File', ' ', chalk.magenta(remoteFile))
-    if (!remoteFile.endsWith('.zip')) {
-        ss.fail(lang('not found zip file'))
-        process.exit()
+// 单文件改名
+const sshRenameFileTask = async (ssh: NodeSSH, remoteFile: string, newName: string) => {
+    ss.start('Rename Remote File', ' ', chalk.magenta(remoteFile))
+    if (remoteFile.endsWith('/')) {
+        throw lang('invalid file path') + ': ' + remoteFile
     }
-    if (path.normalize(remoteFile).replace(/\\/g, '/').match(/^\/.+?\/.+?/) === null) {
-        ss.fail(lang('danger path param'))
-        process.exit()
+    if (newName.indexOf('/') >= 0) {
+        throw lang('invalid new file name') + ': ' + newName
+    }
+    if (!isSafePath(remoteFile)) {
+        throw lang('danger path param')
     }
     //执行linux命令前将路径转为 linux分隔符
     remoteFile = path.normalize(remoteFile).replace(/\\/g, '/')
     const remotePath = remoteFile.substring(0, remoteFile.lastIndexOf(path.basename(remoteFile)))
-    try {
-        const sshCommand = `unzip -o ${remoteFile} -d ${remotePath} && rm -rf ${remoteFile}`
-        const result = await ssh.execCommand(sshCommand)
-        if (result.code) {
-            ss.fail(result.stderr)
-            process.exit()
-        }
-        ss.succeed()
-    } catch (e) {
-        ss.fail(e.toString())
-        process.exit()
+    const newFile = path.join(remotePath, newName).replace(/\\/g, '/')
+    const sshCommand = `mv ${remoteFile} ${newFile}`
+    const result = await ssh.execCommand(sshCommand)
+    if (result.code) { //code === 0 is OK
+        throw result.stderr
     }
+    ss.succeedAppend(" ", chalk.yellow(lang('to')), ' ', chalk.magenta(path.normalize(newFile)))
 }
-
-// 删除本地打包文件
-const removeLocalFile = (localPath: string) => {
-    localPath = path.join(process.cwd(), localPath)
-    ss.start('Clean Local Tmp', ' ', chalk.magenta(localPath))
-    return new Promise<void>((resolve, reject) => {
-        fs.rm(localPath, {recursive: true, force: true}, (err) => {
-            if (err) {
-                ss.fail(err.message)
-                process.exit()
-            } else {
-                ss.succeed()
-                resolve()
-            }
-        })
-    })
-
-}
-
 // 断开ssh
-const disconnectSSH = () => {
+const sshDisconnectTask = (ssh: NodeSSH) => {
     ss.start('SSH Disconnect')
     ssh.dispose()
     ss.succeed()
 }
 
-const deploy = async (param: string[]) => {
+export default async (param: string[]) => {
+    // 部署确认
+    if (!(await confirmDeployTask(param)).confirm) {
+        return
+    }
+    // 检查配置文件
     try {
-        // 部署确认
-        if (!(await confirmDeployTask(param)).confirm) {
-            return
-        }
-        // 检查配置文件
         const configFile = await getCorrectConfigFileTask(configFilePath, param)
         if (!configFile) {
             return
         }
         for (const envKey of param) {
-            ss.info(chalk.bgBlue.bold(' ' + envKey + ' '))
+            ss.info('Current Environment', ' ', chalk.blue.bold(envKey))
             let currentEnv = configFile.env[envKey]
             // 执行打包命令
             await buildCodeTask(currentEnv.project.projectBuildScript)
             // 执行归档命令
-            const zipTmpFileMap: { [projectPath: string]: string } = {}
+            const localZipFileMap: { [projectPath: string]: string } = {}
             for (const projectPath of Object.keys(currentEnv.fileMap)) {
-                zipTmpFileMap[projectPath] = await buildZipTask(projectPath)
+                let outputFile = getFilePathByProjectPath(projectPath)
+                // 创建临时目录
+                await createFolderTask(outputFile)
+                localZipFileMap[projectPath] = await buildZipTask(projectPath, outputFile)
             }
-            //连接ssh
-            await connectSSHTask(
+            // 连接ssh
+            const ssh = await sshConnectTask(
                 currentEnv.server.serverHost,
                 currentEnv.server.serverPort,
                 currentEnv.server.serverUsername,
@@ -365,26 +323,49 @@ const deploy = async (param: string[]) => {
                 configFile.local.sshPassphrase,
                 currentEnv.server.serverPassword
             )
-            const remoteZipFileArr = []
-            //上传文件
+            // 清理远程目录
+            if (currentEnv.other?.isClearServerPathBeforeDeploy) {
+                await sshRemoveFileTask(ssh, ...Object.values(currentEnv.fileMap))
+            }
+            // 上传文件
+            const remoteZipFileMap: { [projectPath: string]: string } = {}
             for (const projectPath of Object.keys(currentEnv.fileMap)) {
-                remoteZipFileArr.push(await uploadLocalFileTask(zipTmpFileMap[projectPath], currentEnv.fileMap[projectPath]))
+                const localZipFile = localZipFileMap[projectPath]
+                let remoteFile
+                const remotePath = path.normalize(currentEnv.fileMap[projectPath])
+                //原文件是文件，且目标目录不以/结尾，直接拷贝目标目录
+                if ((await fsp.stat(path.join(process.cwd(), projectPath))).isFile() && !remotePath.replace(/\\/g, '/').endsWith('/')) {
+                    remoteFile = path.join(remotePath.substring(0, remotePath.lastIndexOf(path.basename(remotePath))), path.basename(localZipFile))
+                } else {
+                    remoteFile = path.join(remotePath, path.basename(localZipFile))
+                }
+                remoteZipFileMap[projectPath] = (await sshUploadFileTask(ssh, localZipFile, remoteFile))
             }
-            //解压远程文件
-            for (const remoteZipFile of remoteZipFileArr) {
-                await unzipRemoteFile(remoteZipFile)
+            // 解压远程文件
+            for (const remoteZipFile of Object.values(remoteZipFileMap)) {
+                await sshUnzipFileTask(ssh, remoteZipFile)
             }
+            // 远程文件改名
+            for (const projectPath of Object.keys(currentEnv.fileMap)) {
+                if ((await fsp.stat(path.join(process.cwd(), projectPath))).isFile() && !currentEnv.fileMap[projectPath].replace(/\\/g, '/').endsWith('/')) {
+                    const remoteFile = path.join(
+                        currentEnv.fileMap[projectPath].substring(0, currentEnv.fileMap[projectPath].lastIndexOf(path.basename(currentEnv.fileMap[projectPath]))),
+                        path.basename(projectPath))
+                    const newName = path.basename(currentEnv.fileMap[projectPath])
+                    if (!remoteFile.endsWith(newName)) {
+                        await sshRenameFileTask(ssh, remoteFile, newName)
+                    }
+                }
+            }
+            sshDisconnectTask(ssh)
         }
-        disconnectSSH()
-        //删除本地临时文件
-        await removeLocalFile(deployLocalTmpPath)
-        ss.succeed(chalk.bgGreen.bold(lang('All Done')))
+        await removeFileTask(deployLocalTmpPath)
+        console.log(chalk.bgGreen.bold(' ' + lang('ALL DONE') + ' '))
     } catch (e) {
-        ss.fail(e)
-        //删除本地临时文件
-        await removeLocalFile(deployLocalTmpPath)
+        ss.fail()
+        await removeFileTask(deployLocalTmpPath)
+        console.log(chalk.bgRed.bold(' ' + lang('ERROR INFO') + ' '))
+        console.log(e)
     }
     process.exit()
 }
-
-export default deploy

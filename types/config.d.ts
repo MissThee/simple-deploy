@@ -15,7 +15,12 @@ declare interface DeployConfigEnv {
         serverPassword?: string
     },
     fileMap: {
-        [projectPath: string]: string
+        //projectFileOrPath:serverPath
+        [projectFileOrPath: string]: string
+    },
+    other?: {
+        isClearServerPathBeforeDeploy?: boolean,
+        isClearDistFileAfterDeploy?: boolean
     }
 }
 
