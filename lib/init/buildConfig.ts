@@ -1,21 +1,20 @@
 import inquirer from 'inquirer'
 import fs from 'fs'
 import path from 'path'
-import lang from '../../lang'
+import {lang} from '../../lang'
 import chalk from 'chalk'
-import ora from 'ora'
+import ss from '../../utils/simpleSpinner'
 
 const packageJsonFileFullName = 'package.json'
 const packageJsonFilePath = path.join(process.cwd(), packageJsonFileFullName)
 const packageJsonFile = fs.existsSync(packageJsonFilePath) ? require(packageJsonFilePath) : {}
-
 
 // 本机配置（项目名，ssh相关）
 const inquirerLocalConfig = [
     {
         type: 'input',
         name: 'projectName',
-        message: lang('projectName'),
+        message: () => lang('projectName'),
         default: () => {
             return packageJsonFile.name || 'unknown'
         }
@@ -23,13 +22,13 @@ const inquirerLocalConfig = [
     {
         type: 'input',
         name: 'sshPrivateKeyPath',
-        message: lang('sshPrivateKeyPath'),
+        message: () => lang('sshPrivateKeyPath'),
         default: '~/.ssh/id_rsa'
     },
     {
         type: 'password',
         name: 'sshPassphrase',
-        message: lang('sshPassphrase'),
+        message: () => lang('sshPassphrase'),
     },
 ]
 
@@ -38,7 +37,7 @@ const inquirerDeployEnvTypesConfig = [
     {
         type: 'input',
         name: 'deployEnvTypes',
-        message: lang('deployEnvTypes') + lang('[') + '"dev,test,prod" ' + lang('no space') + ']',
+        message: () => lang('deployEnvTypes') + lang('[') + '"dev,test,prod" ' + lang('no space') + ']',
         default: 'dev',
         filter: (input: string) => {
             if (input) {
@@ -61,7 +60,7 @@ const inquirerProjectConfig = [
     {
         type: 'list',
         name: 'projectBuildScript',
-        message: lang('projectBuildScript'),
+        message: () => lang('projectBuildScript'),
         choices: () => {
             const choices = []
             if (packageJsonFile.scripts) {
@@ -83,7 +82,7 @@ const inquirerProjectConfig = [
     {
         type: 'input',
         name: 'projectBuildCustomScript',
-        message: lang('projectBuildCustomScript'),
+        message: () => lang('projectBuildCustomScript'),
         when: (answer: any) => !answer.projectBuildScript.indexOf('[custom]')
     }
 ]
@@ -92,12 +91,12 @@ const inquirerServerConfig = [
     {
         type: 'input',
         name: 'serverHost',
-        message: lang('serverHost'),
+        message: () => lang('serverHost'),
     },
     {
         type: 'number',
         name: 'serverPort',
-        message: lang('serverPort'),
+        message: () => lang('serverPort'),
         default: 22,
         validate: (input: number) => {
             return !isNaN(input)
@@ -106,13 +105,13 @@ const inquirerServerConfig = [
     {
         type: 'input',
         name: 'serverUsername',
-        message: lang('serverUsername'),
+        message: () => lang('serverUsername'),
         default: 'root',
     },
     {
         type: 'password',
         name: 'serverPassword',
-        message: lang('serverPassword'),
+        message: () => lang('serverPassword'),
     },
 ]
 // 部署路径设置（文件拷贝映射信息）
@@ -120,13 +119,13 @@ const inquirerFileMapConfig = [
     {
         type: 'confirm',
         name: 'isSingleProjectDistPath',
-        message: lang('isSingleProjectDistPath'),
+        message: () => lang('isSingleProjectDistPath'),
         default: true,
     },
     {
         type: 'editor',
         name: 'fileMap',
-        message: lang('fileMap') + ' {"localPath":"serverPath"}',
+        message: () => lang('fileMap') + ' {"localPath":"serverPath"}',
         default: JSON.stringify({}),
         when: ((answer: any) => !answer.isSingleProjectDistPath),
         validate: (input: string) => {
@@ -145,7 +144,7 @@ const inquirerFileMapConfig = [
     {
         type: 'input',
         name: 'projectFileOrPath',
-        message: lang('projectFileOrPath'),
+        message: () => lang('projectFileOrPath'),
         default: 'dist',
         when: ((answer: any) => answer.isSingleProjectDistPath),
         filter: ((input: string) => path.normalize(input))
@@ -153,7 +152,7 @@ const inquirerFileMapConfig = [
     {
         type: 'input',
         name: 'serverDeployPath',
-        message: lang('serverDeployPath') + ' (' + lang('Absolute path') + '. ' + lang('At least two levels of directory') + ')',
+        message: () => lang('serverDeployPath') + ' (' + lang('Absolute path') + '. ' + lang('At least two levels of directory') + ')',
         when: ((answer: any) => answer.isSingleProjectDistPath),
         validate: (input: string) => {
             return path.normalize(input).replace(/\\/g, '/').match(/^\/.+?\/.+?/) !== null
@@ -167,13 +166,19 @@ const inquirerOtherConfig = [
     {
         type: 'confirm',
         name: 'isClearServerPathBeforeDeploy',
-        message: lang('isClearServerPathBeforeDeploy'),
+        message: () => lang('isClearServerPathBeforeDeploy'),
         default: false,
     },
     {
         type: 'confirm',
-        name: 'isClearDistFileAfterDeploy',
-        message: lang('isClearDistFileAfterDeploy'),
+        name: 'isClearLocalDistFileBeforeBuild',
+        message: () => lang('isClearLocalDistFileBeforeBuild'),
+        default: false,
+    },
+    {
+        type: 'confirm',
+        name: 'isClearLocalDistFileAfterDeploy',
+        message: () => lang('isClearLocalDistFileAfterDeploy'),
         default: false,
     }
 ]
@@ -183,7 +188,7 @@ const buildConfig = async () => {
     const deployEnvTypesConfig = await inquirer.prompt(inquirerDeployEnvTypesConfig)
     for (const key of deployEnvTypesConfig.deployEnvTypes.split(',').filter((item: string) => item)) {
         // 输出当前配置环境提示 dev/test/prod
-        ora().info(chalk.blueBright(lang('Environment Configuration')) + chalk.yellow(": ") + chalk.bgGreen.bold(' ' + key + ' '))
+        ss.info(chalk.blue(lang('Environment Configuration')) + chalk.yellow(": ") + chalk.cyan(key))
         // 开始环境配置
         const currentEnv: DeployConfigEnv = {
             project: {
@@ -196,8 +201,9 @@ const buildConfig = async () => {
                 serverUsername: ""
             },
             other: {
-                isClearServerPathBeforeDeploy: false,
-                isClearDistFileAfterDeploy: false
+                isClearLocalDistFileBeforeBuild: false,
+                isClearLocalDistFileAfterDeploy: false,
+                isClearServerPathBeforeDeploy: false
             }
         };
         {//.project

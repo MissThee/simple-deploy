@@ -1,4 +1,4 @@
-import lang from "../../lang";
+import {lang} from "../../lang";
 import chalk from "chalk";
 import {configFilePath} from "../../utils/global";
 import {NodeSSH} from 'node-ssh';
@@ -8,14 +8,13 @@ import inquirer from 'inquirer'
 import childProcess, {ExecException} from "child_process";
 import archiver from 'archiver'
 import os from "os";
-import SimpleSpinner from './SimpleSpinner'
+import ss from '../../utils/simpleSpinner'
 import {isSafePath} from "../../utils/tools";
 
 const maxBuffer = 5000 * 1024
 const currentTimestamp = '_' + Date.now()
 const deployLocalTmpPath = '.deployTmp' + currentTimestamp
 let zipFileIndex = 0
-const ss = new SimpleSpinner()
 
 // 是否确认部署
 const confirmDeployTask = (param: string[]) => {
@@ -23,7 +22,7 @@ const confirmDeployTask = (param: string[]) => {
         {
             type: 'confirm',
             name: 'confirm',
-            message: lang('sure to deploy') + ' ' + chalk.magenta(param.join(',')) + ' ?',
+            message: () => lang('sure to deploy') + ' ' + chalk.magenta(param.join(',')) + ' ?',
         }
     ])
 }
@@ -174,12 +173,13 @@ const buildZipTask = async (sourcePath: string, outputFile: string) => {
     ss.succeedAppend(" ", chalk.yellow(lang('to')), ' ', chalk.magenta(path.normalize(outputFile)))
     return outputFile;
 }
-// 删除本地打包文件
-const removeFileTask = async (localPath: string) => {
-    localPath = path.join(process.cwd(), localPath)
-    ss.start('Clean Local Tmp', ' ', chalk.magenta(localPath))
-    await fsp.rm(localPath, {recursive: true, force: true})
-    ss.succeed()
+// 删除本地文件
+const removeFileTask = async (message: string, ...localPaths: string[]) => {
+    ss.start('Clean Local', ' ', message)
+    for (const localPath of localPaths) {
+        await fsp.rm(path.join(process.cwd(), localPath), {recursive: true, force: true})
+    }
+    ss.succeedAppend(' ', chalk.magenta(localPaths.map(item => path.normalize(item)).join(' , ')))
 }
 // 连接ssh
 const sshConnectTask = async (host: string, port: number, username: string, privateKey?: string, passphrase?: string, password?: string) => {
@@ -237,7 +237,7 @@ const sshRemoveFileTask = async (ssh: NodeSSH, ...remotePaths: string[]) => {
         }
         await ssh.execCommand(`rm -rf ${remotePath}`)
     }
-    ss.succeed()
+    ss.succeedAppend(' ', chalk.magenta(remotePaths.map(item => path.normalize(item)).join(' , ')))
 }
 // 解压远程文件
 const sshUnzipFileTask = async (ssh: NodeSSH, ...remoteFiles: string[]) => {
@@ -290,20 +290,24 @@ const sshDisconnectTask = (ssh: NodeSSH) => {
     ss.succeed()
 }
 
-export default async (param: string[]) => {
+export default async (env: string[]) => {
     // 部署确认
-    if (!(await confirmDeployTask(param)).confirm) {
+    if (!(await confirmDeployTask(env)).confirm) {
         return
     }
     // 检查配置文件
     try {
-        const configFile = await getCorrectConfigFileTask(configFilePath, param)
+        const configFile = await getCorrectConfigFileTask(configFilePath, env)
         if (!configFile) {
             return
         }
-        for (const envKey of param) {
+        for (const envKey of env) {
             ss.info('Current Environment', ' ', chalk.blue.bold(envKey))
             let currentEnv = configFile.env[envKey]
+            //清理编译目录
+            if (currentEnv.other?.isClearLocalDistFileBeforeBuild) {
+                await removeFileTask('Dist', ...Object.keys(currentEnv.fileMap))
+            }
             // 执行打包命令
             await buildCodeTask(currentEnv.project.projectBuildScript)
             // 执行归档命令
@@ -341,6 +345,7 @@ export default async (param: string[]) => {
                 }
                 remoteZipFileMap[projectPath] = (await sshUploadFileTask(ssh, localZipFile, remoteFile))
             }
+
             // 解压远程文件
             for (const remoteZipFile of Object.values(remoteZipFileMap)) {
                 await sshUnzipFileTask(ssh, remoteZipFile)
@@ -358,12 +363,17 @@ export default async (param: string[]) => {
                 }
             }
             sshDisconnectTask(ssh)
+            //清理编译后的文件
+            if (currentEnv.other?.isClearLocalDistFileAfterDeploy) {
+                await removeFileTask('Dist', ...Object.keys(currentEnv.fileMap))
+            }
         }
-        await removeFileTask(deployLocalTmpPath)
+
+        await removeFileTask('Tmp', deployLocalTmpPath)
         console.log(chalk.bgGreen.bold(' ' + lang('ALL DONE') + ' '))
     } catch (e) {
         ss.fail()
-        await removeFileTask(deployLocalTmpPath)
+        await removeFileTask('Tmp', deployLocalTmpPath)
         console.log(chalk.bgRed.bold(' ' + lang('ERROR INFO') + ' '))
         console.log(e)
     }

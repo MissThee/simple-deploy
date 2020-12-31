@@ -1,7 +1,7 @@
 import ora from "ora";
-import lang from "../../lang";
+import {lang} from "../lang";
 
-export default class SimpleSpinner {
+class SimpleSpinner {
     spinner = ora()
 
     start(...value: string[]) {
@@ -26,4 +26,11 @@ export default class SimpleSpinner {
     info(...value: string[]) {
         this.spinner.info(value.map(item => lang(item)).join(''))
     }
+    warn(...value: string[]) {
+        this.spinner.warn(value.map(item => lang(item)).join(''))
+    }
 }
+
+const spinner = new SimpleSpinner()
+
+export default spinner

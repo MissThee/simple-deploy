@@ -19,8 +19,9 @@ declare interface DeployConfigEnv {
         [projectFileOrPath: string]: string
     },
     other?: {
+        isClearLocalDistFileBeforeBuild?: boolean
         isClearServerPathBeforeDeploy?: boolean,
-        isClearDistFileAfterDeploy?: boolean
+        isClearLocalDistFileAfterDeploy?: boolean
     }
 }
 

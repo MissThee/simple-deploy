@@ -17,7 +17,12 @@
 			},
 			"fileMap": {
 				"dist": "/data/www/lighttpd/bmwcysp/video/test",
-				"dist1/index.html": "/data/www/lighttpd/bmwcysp/video/test1/index.html"
+				"dist1/index.html": "/data/www/lighttpd/bmwcysp/video/test1/ondex.html"
+			},
+			"other": {
+				"isClearLocalDistFileBeforeBuild": false,
+				"isClearServerPathBeforeDeploy": true,
+				"isClearLocalDistFileAfterDeploy": true
 			}
 		}
 	}

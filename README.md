@@ -1,1 +1,1 @@
-deploy-cli
+# simple-deploy
