@@ -1,6 +1,6 @@
 {
-  "name": "deploy-cli",
-  "version": "1.0.0",
+  "name": "@missthee/simple-deploy",
+  "version": "0.0.1-beta",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -15,7 +15,7 @@
     "cli"
   ],
   "bin": {
-    "deploy-service": "bin/simple-deploy.js"
+    "simple-deploy": "bin/simple-deploy.js"
   },
   "repository": {
     "type": "git",
