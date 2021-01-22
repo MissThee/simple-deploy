@@ -1,6 +1,7 @@
+![simple-deploy](https://socialify.git.ci/MissThee/simple-deploy/image?font=KoHo&forks=1&language=1&owner=1&pattern=Circuit%20Board&stargazers=1&theme=Light)
 # simple-deploy
 
-A simple tool for packaging, copying to linux server, and cleaning up
+A simple NodeJS tool for packaging, copying to linux server, and cleaning up
 
 ### Install
 
