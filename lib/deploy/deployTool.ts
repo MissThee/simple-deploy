@@ -210,7 +210,7 @@ export const removeFile = async (message: string, ...localPaths: string[]) => {
 }
 // 连接ssh
 export const sshConnect = async (host: string, port: number, username: string, privateKey?: string, passphrase?: string, password?: string) => {
-    ss.start('SSH Connect', ' ', chalk.magenta(host))
+
     if (privateKey && privateKey.trimStart().startsWith('~')) {
         privateKey = path.join(os.homedir(), privateKey.substring(privateKey.indexOf('~') + 1))
     }
@@ -228,7 +228,7 @@ export const sshConnect = async (host: string, port: number, username: string, p
             {
                 type: 'password',
                 name: 'password',
-                message: lang('please input password')
+                message: lang('please input server password')
             }
         ])
         sshConfig.password = answers.password
@@ -237,6 +237,7 @@ export const sshConnect = async (host: string, port: number, username: string, p
     !privateKey && delete sshConfig.privateKey
     !passphrase && delete sshConfig.passphrase
     const ssh = new NodeSSH()
+    ss.start('SSH Connect', ' ', chalk.magenta(host))
     await ssh.connect(sshConfig)
     ss.succeed()
     return ssh
