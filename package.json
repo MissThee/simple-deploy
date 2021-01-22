@@ -1,13 +1,13 @@
 {
   "name": "@missthee/simple-deploy",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "main": "index.js",
   "scripts": {
     "watch": "tsc --watch",
-    "default": "node bin/simple-deploy.js -e dev",
     "init": "node bin/simple-deploy.js init ",
     "init zh-CH": "node bin/simple-deploy.js init -l zh-CN",
+    "default": "node bin/simple-deploy.js -e dev",
     "errorTest": "node bin/simple-deploy.js deploy -e thisIsATestParam",
     "publish": "npm publish --access public"
   },

@@ -18,7 +18,7 @@ export const confirmDeploy = (param: string, envs: string[]) => {
         {
             type: 'confirm',
             name: 'confirm',
-            message: () => 'Confirm'+ param + '\n' + lang('sure to deploy') +' ' + chalk.magenta(envs.join(', ')) + ' ?',
+            message: () => 'Confirm' + param + '\n' + lang('sure to deploy') + ' ' + chalk.magenta(envs.join(', ')) + ' ?',
         }
     ]))
 }
@@ -177,7 +177,10 @@ export const createDir = async (filePath: string) => {
 export const buildZip = async (sourcePath: string, outputFile: string) => {
     sourcePath = path.join(process.cwd(), sourcePath)
     ss.start('Zip Local File', ' ', chalk.magenta(sourcePath))
-    const archive = archiver('zip', {zlib: {level: 9}})
+    const archive = archiver('zip', {
+        zlib: {level: 9},
+        forceLocalTime: true
+    })
     const sourcePathStat = await fsp.stat(sourcePath)
     if (sourcePathStat.isFile()) {
         archive.file(sourcePath, {name: path.basename(sourcePath)})
