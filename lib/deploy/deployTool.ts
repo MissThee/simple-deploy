@@ -13,14 +13,14 @@ import {isSafePath} from "../../utils/tools";
 export const deployLocalTmpPath = '.deployTmp' + '_' + Date.now()
 
 // 是否确认部署
-export const confirmDeploy = (param: string[]) => {
-    return inquirer.prompt([
+export const confirmDeploy = (param: string, envs: string[]) => {
+    return Promise.resolve(inquirer.prompt([
         {
             type: 'confirm',
             name: 'confirm',
-            message: () => lang('sure to deploy') + ' ' + chalk.magenta(param.join(',')) + ' ?',
+            message: () => 'Confirm'+ param + '\n' + lang('sure to deploy') +' ' + chalk.magenta(envs.join(', ')) + ' ?',
         }
-    ])
+    ]))
 }
 
 // 检查配置文件
@@ -36,14 +36,15 @@ export const getCorrectConfigFile = async (configFilePath: string, envKeys: stri
     for (const envKey of envKeys) {
         if (envKey in configFile.env) {
             const envNode = configFile.env[envKey]
-            const projectNode = envNode.project
-            if (!projectNode?.projectBuildScript) {
-                errorParamArr.push({
-                    param: 'env.' + envKey + 'project.projectBuildScript',
-                    reason: lang('not found or empty value')
-                })
-                isOk = false
-            }
+            // 不再检查项目编译指令，允许为空
+            // const projectNode = envNode.project
+            // if (!projectNode?.projectBuildScript) {
+            //     errorParamArr.push({
+            //         param: 'env.' + envKey + 'project.projectBuildScript',
+            //         reason: lang('not found or empty value')
+            //     })
+            //     isOk = false
+            // }
             const serverNode = envNode.server
             if (!serverNode?.serverHost) {
                 errorParamArr.push({
@@ -163,7 +164,10 @@ export const mkdirsSync = (dirname: string) => {
 
 // 创建临时存储目录
 export const createDir = async (filePath: string) => {
-    let dirPath=filePath.substring(0, filePath.lastIndexOf(path.basename(filePath)))
+    let dirPath = filePath.substring(0, filePath.lastIndexOf(path.basename(filePath)))
+    if (fs.existsSync(dirPath)) {
+        return
+    }
     ss.start('Create Local Tmp Dir', ' ', chalk.magenta(dirPath))
     await mkdirsSync(dirPath)
     ss.succeed()
@@ -188,11 +192,21 @@ export const buildZip = async (sourcePath: string, outputFile: string) => {
 }
 // 删除本地文件
 export const removeFile = async (message: string, ...localPaths: string[]) => {
+    let isFileExist = false
+    for (const localPath of localPaths) {
+        if (fs.existsSync(localPath)) {
+            isFileExist = true
+            break;
+        }
+    }
+    if (!isFileExist) {
+        return
+    }
     ss.start('Clean Local', ' ', message)
     for (const localPath of localPaths) {
         await fsp.rm(path.join(process.cwd(), localPath), {recursive: true, force: true})
     }
-    ss.succeedAppend(' ', chalk.magenta(localPaths.map(item => path.normalize(item)).join(' , ')))
+    ss.succeedAppend(' ', chalk.magenta(localPaths.map(localPath => path.normalize(path.join(process.cwd(), localPath))).join(' , ')))
 }
 // 连接ssh
 export const sshConnect = async (host: string, port: number, username: string, privateKey?: string, passphrase?: string, password?: string) => {
@@ -297,7 +311,7 @@ const sshRenameFile = async (ssh: NodeSSH, remoteFile: string, newName: string) 
 }
 
 //远程文件改名
-export const sshRenameFileByFullPath=async (ssh: NodeSSH, projectPath: string, remotePath: string) => {
+export const sshRenameFileByFullPath = async (ssh: NodeSSH, projectPath: string, remotePath: string) => {
     if ((await fsp.stat(path.join(process.cwd(), projectPath))).isFile() && !remotePath.replace(/\\/g, '/').endsWith('/')) {
         const remoteFile = path.join(
             remotePath.substring(0, remotePath.lastIndexOf(path.basename(remotePath))),

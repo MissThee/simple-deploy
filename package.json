@@ -8,7 +8,8 @@
     "default": "node bin/simple-deploy.js -e dev",
     "init": "node bin/simple-deploy.js init ",
     "init zh-CH": "node bin/simple-deploy.js init -l zh-CN",
-    "deploy": "node bin/simple-deploy.js deploy -e thisIsATestParam"
+    "errorTest": "node bin/simple-deploy.js deploy -e thisIsATestParam",
+    "publish": "npm publish --access public"
   },
   "keywords": [
     "deploy",
