@@ -21,7 +21,7 @@ npm i @missthee/simple-deploy -D
    # chinese
    simple-deploy init -l zh-CN
    ```
-   Generate configuration file `deploy.config.json` after option.
+   Generate configuration file `simple-deploy.config.json` after option.
 
 
 2. ***Deployment***
@@ -31,7 +31,7 @@ npm i @missthee/simple-deploy -D
    ```
    Execution log example
    ```text
-        √ Check Configuration T:\deployFileTest\deploy.config.json
+        √ Check Configuration T:\deployFileTest\simple-deploy.config.json
         ? Confirm
         · deploy-cli
         · dev: 11.22.33.44
@@ -65,7 +65,7 @@ npm i @missthee/simple-deploy -D
 
 ### Configuration File
 
-+ `deploy.config.json` example:
++ `simple-deploy.config.json` example:
    ```json
       {
       	"local": {
