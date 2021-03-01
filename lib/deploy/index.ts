@@ -3,10 +3,13 @@ import chalk from "chalk";
 import {configFilePath} from "../../utils/global";
 import path from 'path';
 import ss from '../../utils/simpleSpinner'
-
 import * as deployTool from './deployTool'
 
 export default async (envKeys: string[]) => {
+    deployTool.clearUp( () => {
+        // 进程退出前清理临时文件目录
+        deployTool.removeFileSync('Tmp Dir', deployTool.deployLocalTmpPath)
+    })
     if (!envKeys) {
         console.log(chalk.bgRed.bold(' ' + lang('ERROR INFO') + ' '))
         console.log(lang("Empty environment option. "), lang("Use '-e' to specify"))
@@ -96,6 +99,8 @@ export default async (envKeys: string[]) => {
         await deployTool.removeFile('Tmp Dir', deployTool.deployLocalTmpPath)
         console.log(chalk.bgRed.bold(' ' + lang('ERROR INFO') + ' '))
         console.log(e)
+    } finally {
+
     }
     process.exit()
 }

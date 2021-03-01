@@ -45,18 +45,24 @@ var path_1 = __importDefault(require("path"));
 var init_1 = __importDefault(require("../lib/init"));
 var deploy_1 = __importDefault(require("../lib/deploy"));
 var lang_1 = require("../lang");
-// console.log('process.env', process.env)
-// 解析命令内容，执行命令：node deploy-cli.js deploy --mode prod
+// 1、在package.json中配置
+// "bin": {
+//     "simple-deploy": "bin/simple-deploy.js"
+// }
+// 其中key值为安装本cli后，启动本cli的指令
+// 2、解析命令内容
+// 如执行命令：simple-deploy deploy --mode prod
 // console.log('process.argv', process.argv)
-// [
+// 输出[
 //   'C:\\Program Files\\nodejs\\node.exe',
 //   'T:\\deploy-cli\\bin\\deploy-cli.js',
 //   'deploy',
 //   '--mode',
 //   'prod'
 // ]
-// const argvPart = process.argv.slice(2)// [ 'deploy', '--mode', 'prod' ]
-// const args = minimist(argvPart)// { _: [ 'deploy' ], mode: 'prod' }
+// 提取参数
+// const argvPart = process.argv.slice(2)// 输出[ 'deploy', '--mode', 'prod' ]
+// const args = minimist(argvPart)// 输出{ _: [ 'deploy' ], mode: 'prod' }
 var packageJsonFilePath = path_1.default.join(process.cwd()) + "/package.json";
 var packageJsonFile = fs_1.default.existsSync(packageJsonFilePath) ? require(packageJsonFilePath) : {};
 var commander_1 = require("commander");
