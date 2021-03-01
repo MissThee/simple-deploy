@@ -1,0 +1,28 @@
+{
+	"local": {
+		"projectName": "a",
+		"sshPrivateKeyPath": "~/.ssh/id_rsa",
+		"sshPassphrase": ""
+	},
+	"env": {
+		"dev": {
+			"project": {
+				"projectBuildScript": "tsc"
+			},
+			"fileMap": {
+				"dist": "\\asas\\asas"
+			},
+			"server": {
+				"serverHost": "127.0.0.1",
+				"serverPort": 22,
+				"serverUsername": "root",
+				"serverPassword": ""
+			},
+			"other": {
+				"isClearServerPathBeforeDeploy": false,
+				"isClearLocalDistFileBeforeBuild": false,
+				"isClearLocalDistFileAfterDeploy": false
+			}
+		}
+	}
+}
