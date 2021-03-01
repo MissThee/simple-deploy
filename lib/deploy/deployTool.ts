@@ -12,7 +12,7 @@ import {isSafePath} from "../../utils/tools";
 
 export const deployLocalTmpPath = '.deployTmp' + '_' + Date.now()
 
-// 是否确认部署
+// 确认是否部署提示
 export const confirmDeploy = (param: string, envs: string[]) => {
     return Promise.resolve(inquirer.prompt([
         {
@@ -168,7 +168,7 @@ export const createDir = async (filePath: string) => {
     if (fs.existsSync(dirPath)) {
         return
     }
-    ss.start('Create Local Tmp Dir', ' ', chalk.magenta(dirPath))
+    ss.start('LOCAL Create Dir', ' ', chalk.magenta(dirPath))
     await mkdirsSync(dirPath)
     ss.succeed()
 }
@@ -176,7 +176,7 @@ export const createDir = async (filePath: string) => {
 // 归档Zip
 export const buildZip = async (sourcePath: string, outputFile: string) => {
     sourcePath = path.join(process.cwd(), sourcePath)
-    ss.start('Zip Local File', ' ', chalk.magenta(sourcePath))
+    ss.start('LOCAL Zip File', ' ', chalk.magenta(sourcePath))
     const archive = archiver('zip', {
         zlib: {level: 9},
         forceLocalTime: true
@@ -205,11 +205,29 @@ export const removeFile = async (message: string, ...localPaths: string[]) => {
     if (!isFileExist) {
         return
     }
-    ss.start('Clean Local', ' ', message)
+    ss.start('LOCAL Delete File', ' ', message)
     for (const localPath of localPaths) {
         await fsp.rm(path.join(process.cwd(), localPath), {recursive: true, force: true})
     }
     ss.succeedAppend(' ', chalk.magenta(localPaths.map(localPath => path.normalize(path.join(process.cwd(), localPath))).join(' , ')))
+}
+// 删除本地文件，同步，线程退出时清理使用
+export const removeFileSync = (message: string, ...localPaths: string[]) => {
+    let isFileExist = false
+    for (const localPath of localPaths) {
+        if (fs.existsSync(localPath)) {
+            isFileExist = true
+            break;
+        }
+    }
+    if (!isFileExist) {
+        return
+    }
+    for (const localPath of localPaths) {
+        fs.rm(path.join(process.cwd(), localPath), {recursive: true, force: true}, () => {
+        })
+    }
+    console.log(' ' + chalk.bgGray('CLEAR UP') + ' ')
 }
 // 连接ssh
 export const sshConnect = async (host: string, port: number, username: string, privateKey?: string, passphrase?: string, password?: string) => {
@@ -247,7 +265,7 @@ export const sshConnect = async (host: string, port: number, username: string, p
 }
 // 上传文件
 export const sshUploadFile = async (ssh: NodeSSH, localZipFile: string, remoteFile: string) => {
-    ss.start('Upload File', ' ', chalk.magenta(localZipFile))
+    ss.start('REMOTE Upload File', ' ', chalk.magenta(localZipFile))
     await ssh.putFile(
         path.normalize(localZipFile),
         path.normalize(remoteFile),
@@ -260,7 +278,7 @@ export const sshUploadFile = async (ssh: NodeSSH, localZipFile: string, remoteFi
 }
 // 删除远程文件
 export const sshRemoveFile = async (ssh: NodeSSH, ...remotePaths: string[]) => {
-    ss.start('Clean Remote File Or Path')
+    ss.start('REMOTE Clean File Or Path')
     for (const remotePath of remotePaths) {
         if (!isSafePath(remotePath)) {
             throw lang('danger path param')
@@ -272,7 +290,7 @@ export const sshRemoveFile = async (ssh: NodeSSH, ...remotePaths: string[]) => {
 // 解压远程文件
 export const sshUnzipFile = async (ssh: NodeSSH, ...remoteFiles: string[]) => {
     for (let remoteFile of remoteFiles) {
-        ss.start('Unzip And Delete Remote File', ' ', chalk.magenta(remoteFile))
+        ss.start('REMOTE Unzip And Delete File', ' ', chalk.magenta(remoteFile))
         if (!remoteFile.endsWith('.zip')) {
             throw lang('not found zip file')
         }
@@ -292,7 +310,6 @@ export const sshUnzipFile = async (ssh: NodeSSH, ...remoteFiles: string[]) => {
 }
 // 远程单文件改名
 const sshRenameFile = async (ssh: NodeSSH, remoteFile: string, newName: string) => {
-    ss.start('Rename Remote File', ' ', chalk.magenta(remoteFile))
     if (remoteFile.endsWith('/')) {
         throw lang('invalid file path') + ': ' + remoteFile
     }
@@ -311,7 +328,7 @@ const sshRenameFile = async (ssh: NodeSSH, remoteFile: string, newName: string) 
     if (result.code) { //code === 0 is OK
         throw result.stderr
     }
-    ss.succeedAppend(" ", chalk.yellow(lang('to')), ' ', chalk.magenta(path.normalize(newFile)))
+    return newFile
 }
 
 //远程文件改名
@@ -322,7 +339,9 @@ export const sshRenameFileByFullPath = async (ssh: NodeSSH, projectPath: string,
             path.basename(projectPath))
         const newName = path.basename(remotePath)
         if (!remoteFile.endsWith(newName)) {
-            await sshRenameFile(ssh, remoteFile, newName)
+            ss.start('REMOTE Rename File', ' ', chalk.magenta(remoteFile))
+            const newFile = await sshRenameFile(ssh, remoteFile, newName)
+            ss.succeedAppend(" ", chalk.yellow(lang('to')), ' ', chalk.magenta(path.normalize(newFile)))
         }
     }
 }
@@ -333,3 +352,23 @@ export const sshDisconnect = (ssh: NodeSSH) => {
     ssh.dispose()
     ss.succeed()
 }
+// 退出进程时执行动作
+export const clearUp = (callback: () => any) => {
+        callback = callback || function () {
+        };
+        // before exiting
+        process.on('exit', callback);
+        // catch ctrl+c event and exit normally
+        process.on('SIGINT', function () {
+            console.log('\n' + ' ' + chalk.bgGray('Ctrl-c') + ' ')
+            process.exit(2);
+        });
+        //catch uncaught exceptions, trace, then exit normally
+        process.on('uncaughtException', function (e) {
+            console.log(e.stack);
+            process.exit(99);
+
+        });
+
+    }
+;

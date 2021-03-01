@@ -1,3 +1,4 @@
+// 用户配置填写内容设置
 import inquirer from 'inquirer'
 import fs from 'fs'
 import path from 'path'
@@ -8,7 +9,7 @@ import ss from '../../utils/simpleSpinner'
 const packageJsonFileFullName = 'package.json'
 const packageJsonFilePath = path.join(process.cwd(), packageJsonFileFullName)
 const packageJsonFile = fs.existsSync(packageJsonFilePath) ? require(packageJsonFilePath) : {}
-
+// -----问题配置[开始]-----
 // 本机配置（项目名，ssh相关）
 const inquirerLocalConfig = [
     {
@@ -31,7 +32,6 @@ const inquirerLocalConfig = [
         message: () => lang('sshPassphrase'),
     },
 ]
-
 // 部署环境设置（有几种部署环境）
 const inquirerDeployEnvTypesConfig = [
     {
@@ -157,6 +157,7 @@ const inquirerFileMapConfig = [
         validate: (input: string) => {
             return path.normalize(input).replace(/\\/g, '/').match(/^\/.+?\/.+?/) !== null
         },
+        default: '/example1/example2',
         filter: ((input: string) => path.normalize(input))
     },
 
@@ -182,6 +183,7 @@ const inquirerOtherConfig = [
         default: false,
     }
 ]
+// -----问题配置[结束]-----
 const buildConfig = async () => {
     const local = await inquirer.prompt(inquirerLocalConfig);
     const env: { [envKey: string]: DeployConfigEnv } = {}
