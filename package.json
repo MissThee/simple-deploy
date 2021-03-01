@@ -1,7 +1,7 @@
 {
   "name": "@missthee/simple-deploy",
-  "version": "1.0.2",
-  "description": "",
+  "version": "1.0.3",
+  "description": "Simple tool for processing scripts and uploading files",
   "main": "index.js",
   "scripts": {
     "watch": "tsc --watch",
@@ -20,9 +20,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fuchengwei/deploy-cli-service"
+    "url": "git+https://github.com/MissThee/simple-deploy"
   },
-  "author": "",
+  "author": "MissThee",
   "license": "ISC",
   "dependencies": {
     "archiver": "^5.1.0",
