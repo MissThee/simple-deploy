@@ -16,6 +16,7 @@ const packageJsonFilePath = `${path.join(process.cwd())}/package.json`
 const packageJsonFile = fs.existsSync(packageJsonFilePath) ? require(packageJsonFilePath) : {}
 import {Command} from 'commander'
 import {configFilePath} from '../utils/global'
+import {NodeSSH} from "node-ssh";
 
 const program = new Command();
 program

@@ -334,13 +334,15 @@ const sshRenameFile = async (ssh: NodeSSH, remoteFile: string, newName: string) 
 //远程文件改名
 export const sshRenameFileByFullPath = async (ssh: NodeSSH, projectPath: string, remotePath: string) => {
     if ((await fsp.stat(path.join(process.cwd(), projectPath))).isFile() && !remotePath.replace(/\\/g, '/').endsWith('/')) {
-        const remoteFile = path.join(
+        //使用远程文件全路径 和 本地文件全路径截取的最后一部分文件名拼接，找到未改名称的远程文件
+        const remoteFileBeforeRename = path.join(
             remotePath.substring(0, remotePath.lastIndexOf(path.basename(remotePath))),
             path.basename(projectPath))
         const newName = path.basename(remotePath)
-        if (!remoteFile.endsWith(newName)) {
-            ss.start('REMOTE Rename File', ' ', chalk.magenta(remoteFile))
-            const newFile = await sshRenameFile(ssh, remoteFile, newName)
+        // 判断名称是否一致，进行更改名称
+        if (!remoteFileBeforeRename.endsWith(newName)) {
+            ss.start('REMOTE Rename File', ' ', chalk.magenta(remoteFileBeforeRename))
+            const newFile = await sshRenameFile(ssh, remoteFileBeforeRename, newName)
             ss.succeedAppend(" ", chalk.yellow(lang('to')), ' ', chalk.magenta(path.normalize(newFile)))
         }
     }

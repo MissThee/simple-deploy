@@ -51,18 +51,7 @@ var lang_1 = require("../lang");
 // }
 // 其中key值为安装本cli后，启动本cli的指令
 // 2、解析命令内容
-// 如执行命令：simple-deploy deploy --mode prod
-// console.log('process.argv', process.argv)
-// 输出[
-//   'C:\\Program Files\\nodejs\\node.exe',
-//   'T:\\deploy-cli\\bin\\deploy-cli.js',
-//   'deploy',
-//   '--mode',
-//   'prod'
-// ]
-// 提取参数
-// const argvPart = process.argv.slice(2)// 输出[ 'deploy', '--mode', 'prod' ]
-// const args = minimist(argvPart)// 输出{ _: [ 'deploy' ], mode: 'prod' }
+// 如 simple-deploy deploy --mode prod
 var packageJsonFilePath = path_1.default.join(process.cwd()) + "/package.json";
 var packageJsonFile = fs_1.default.existsSync(packageJsonFilePath) ? require(packageJsonFilePath) : {};
 var commander_1 = require("commander");
@@ -70,9 +59,9 @@ var global_1 = require("../utils/global");
 var program = new commander_1.Command();
 program
     .version(packageJsonFile.version, '-v, --version', 'current version');
-program.command('init')
+program.command('init') // 决定解析命令后，执行哪块儿代码
     .description('init deploy configuration')
-    .option('-l, --language <language_key>', 'language')
+    .option('-l, --language <language_key>', 'language') // --language 决定opts中属性
     .action(function (opts) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
         switch (_a.label) {
@@ -103,4 +92,17 @@ program.command('deploy', { isDefault: true })
     });
 }); });
 program.parse(process.argv);
+// nodejs解析命令
+// 如执行命令：node bin/simple-deploy,js deploy --mode prod
+// console.log('process.argv', process.argv)
+// 输出[
+//   'C:\\Program Files\\nodejs\\node.exe',
+//   'T:\\deploy-cli\\bin\\deploy-cli.js',
+//   'deploy',
+//   '--mode',
+//   'prod'
+// ]
+// 提取参数
+// const argvPart = process.argv.slice(2)// 输出[ 'deploy', '--mode', 'prod' ]
+// const args = minimist(argvPart)// 输出{ _: [ 'deploy' ], mode: 'prod' }
 //# sourceMappingURL=simple-deploy.js.map
