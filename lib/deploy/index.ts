@@ -6,7 +6,7 @@ import ss from '../../utils/simpleSpinner'
 import * as deployTool from './deployTool'
 
 export default async (envKeys: string[]) => {
-    deployTool.clearUp( () => {
+    deployTool.clearUp(() => {
         // 进程退出前清理临时文件目录
         deployTool.removeFileSync('Tmp Dir', deployTool.deployLocalTmpPath)
     })
@@ -104,3 +104,4 @@ export default async (envKeys: string[]) => {
     }
     process.exit()
 }
+

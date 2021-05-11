@@ -1,6 +1,6 @@
 {
   "name": "@missthee/simple-deploy",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "Simple tool for processing scripts and uploading files",
   "main": "index.js",
   "scripts": {
@@ -29,7 +29,6 @@
     "chalk": "^4.1.0",
     "commander": "^6.2.1",
     "inquirer": "^7.3.3",
-    "minimist": "^1.2.5",
     "node-ssh": "^11.1.1",
     "ora": "^5.1.0",
     "typescript": "^4.1.3"
@@ -37,7 +36,6 @@
   "devDependencies": {
     "@types/archiver": "^5.1.0",
     "@types/inquirer": "^7.3.1",
-    "@types/minimist": "^1.2.1",
     "@types/node": "^14.14.16"
   }
 }
