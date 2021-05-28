@@ -41,7 +41,7 @@ npm i @missthee/simple-deploy -D
         √ Create Local Tmp Dir T:\deployFileTest\.deployTmp_1611289911528\
         √ Zip Local File T:\deployFileTest\dist to T:\deployFileTest\.deployTmp_1611289911528\dist_deploy.zip
         √ Zip Local File T:\deployFileTest\dist1\index.html to T:\deployFileTest\.deployTmp_1611289911528\index.html_deploy.zip
-        √ SSH Connect 8.131.61.254
+        √ SSH Connect 11.22.33.44
         √ Upload File T:\deployFileTest\.deployTmp_1611289911528\dist_deploy.zip to \www\wwwroot\default\aaa\dist_deploy.zip
         √ Upload File T:\deployFileTest\.deployTmp_1611289911528\index.html_deploy.zip to \www\wwwroot\default\bbb\index.html_deploy.zip
         √ Unzip And Delete Remote File \www\wwwroot\default\aaa\dist_deploy.zip
