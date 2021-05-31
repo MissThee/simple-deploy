@@ -79,12 +79,13 @@ program.command('deploy', { isDefault: true })
     .description('deploy file')
     .option('-e, --environment <environment_key...>', 'deploy environment')
     .option('-l, --language <language_key>', 'language')
+    .option('-d, --directly', 'execute deploy process directly')
     .action(function (opts) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 lang_1.i18n.setLang(opts.language);
-                return [4 /*yield*/, deploy_1.default(opts.environment)];
+                return [4 /*yield*/, deploy_1.default(opts)];
             case 1:
                 _a.sent();
                 return [2 /*return*/];

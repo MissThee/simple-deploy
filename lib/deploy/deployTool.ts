@@ -87,7 +87,7 @@ export const getCorrectConfigFile = async (configFilePath: string, envKeys: stri
                     if (path.normalize(fileMapNode[key]).replace(/\\/g, '/').match(/^\/.+?\/.+?/) === null) {
                         errorParamArr.push({
                             param: 'env.' + envKey + 'fileMap.' + key,
-                            reason: lang('Absolute path') + '. ' + lang('At least two levels of directory')
+                            reason: lang('At least two levels of directories are required to use absolute paths')
                         })
                         isOk = false
                     }

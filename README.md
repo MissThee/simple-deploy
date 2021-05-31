@@ -68,53 +68,53 @@ npm i @missthee/simple-deploy -D
 + `simple-deploy.config.json` example:
    ```json
       {
-      	"local": {
-      		"projectName": "deploy-cli",              
-      		"sshPrivateKeyPath": "~/.ssh/id_rsa", 
-      		"sshPassphrase": ""
-      	},
-      	"env": {
-      		"dev": {
-      			"project": {
-      				"projectBuildScript": "npm build"
-      			},
-      			"server": {
-      				"serverHost": "11.22.33.44",
-      				"serverPort": 22,
-      				"serverUsername": "root",
-      				"serverPassword": "root"
-      			},
-      			"fileMap": {
-      				"dist": "/www/wwwroot/default/aaa",
-      				"dist1/index.html": "/www/wwwroot/default/bbb/rename.html"
-      			},
-      			"other": {
-      				"isClearLocalDistFileBeforeBuild": false,
-      				"isClearServerPathBeforeDeploy": false,
-      				"isClearLocalDistFileAfterDeploy": false
-      			}
-      		},
-           "prod": {
-              "project": {
-                 "projectBuildScript": "npm build"
-              },
-              "server": {
-                 "serverHost": "55.66.77.88",
-                 "serverPort": 22,
-                 "serverUsername": "root",
-                 "serverPassword": "root"
-              },
-              "fileMap": {
-                 "dist": "/www/wwwroot/default/aaa",
-                 "dist1/index.html": "/www/wwwroot/default/bbb/rename.html"
-              },
-              "other": {
-                 "isClearLocalDistFileBeforeBuild": false,
-                 "isClearServerPathBeforeDeploy": false,
-                 "isClearLocalDistFileAfterDeploy": false
-              }
-           }
-      	}
+        "local": {
+          "projectName": "deploy-cli",
+          "sshPrivateKeyPath": "~/.ssh/id_rsa",
+          "sshPassphrase": ""
+        },
+        "env": {
+          "dev": {
+            "project": {
+              "projectBuildScript": "npm build"
+            },
+            "server": {
+              "serverHost": "11.22.33.44",
+              "serverPort": 22,
+              "serverUsername": "root",
+              "serverPassword": "root"
+            },
+            "fileMap": {
+              "dist": "/www/wwwroot/default/aaa",
+              "dist1/index.html": "/www/wwwroot/default/bbb/rename.html"
+            },
+            "other": {
+              "isClearLocalDistFileBeforeBuild": false,
+              "isClearServerPathBeforeDeploy": false,
+              "isClearLocalDistFileAfterDeploy": false
+            }
+          },
+          "prod": {
+            "project": {
+              "projectBuildScript": "npm build"
+            },
+            "server": {
+              "serverHost": "55.66.77.88",
+              "serverPort": 22,
+              "serverUsername": "root",
+              "serverPassword": "root"
+            },
+            "fileMap": {
+              "dist": "/www/wwwroot/default/aaa",
+              "dist1/index.html": "/www/wwwroot/default/bbb/rename.html"
+            },
+            "other": {
+              "isClearLocalDistFileBeforeBuild": false,
+              "isClearServerPathBeforeDeploy": false,
+              "isClearLocalDistFileAfterDeploy": false
+            }
+          }
+        }
       }
    ```
 + `other` option
@@ -126,4 +126,4 @@ npm i @missthee/simple-deploy -D
       Use the key of `fileMap`, and use the project root directory as the starting path to clean up files after deployment.
 
 ### NOTE
-  Line breaks in entry file `/bin/simple-deploy.js` require `LF` to fit macOS
+  Line breaks in entry file `/bin/simple-deploy.js` require `LF`(\n) to fit macOS

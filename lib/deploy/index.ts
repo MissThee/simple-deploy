@@ -5,7 +5,9 @@ import path from 'path';
 import ss from '../../utils/simpleSpinner'
 import * as deployTool from './deployTool'
 
-export default async (envKeys: string[]) => {
+export default async (opts: any) => {
+    const directly = opts.directly
+    const envKeys: string[] = opts.environment
     deployTool.clearUp(() => {
         // 进程退出前清理临时文件目录
         deployTool.removeFileSync('Tmp Dir', deployTool.deployLocalTmpPath)
@@ -29,8 +31,10 @@ export default async (envKeys: string[]) => {
             for (const envKey of envKeys) {
                 deploymentInfo += '\n' + '· ' + chalk.magenta(envKey) + chalk.yellow(': ') + chalk.green(configFile.env[envKey].server.serverHost)
             }
-            if (!(await deployTool.confirmDeploy(deploymentInfo, envKeys)).confirm) {
-                return
+            if (!directly) {
+                if (!(await deployTool.confirmDeploy(deploymentInfo, envKeys)).confirm) {
+                    return
+                }
             }
         }
         // 遍历需要执行的环境配置

@@ -10,7 +10,7 @@
 				"projectBuildScript": "tsc"
 			},
 			"fileMap": {
-				"dist": "\\asas\\asas"
+				"dist": "/foo/bar"
 			},
 			"server": {
 				"serverHost": "127.0.0.1",
