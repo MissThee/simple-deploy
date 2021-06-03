@@ -1,4 +1,10 @@
 import path from 'path';
 
-export const configFileFullName='simple-deploy.config.json'
-export const configFilePath = path.join(process.cwd(), configFileFullName)
+export const configFileName = 'simple-deploy.config'
+
+export enum configFileExt {
+    JSON = '.json',
+    JS = '.js',
+}
+
+export const configFilePath = path.join(process.cwd(), configFileName)

@@ -31,3 +31,7 @@ declare interface DeployConfig {
         [envKey: string]: DeployConfigEnv
     }
 }
+
+declare interface FileConfig {
+    type: '.json' | '.js'
+}
