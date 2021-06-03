@@ -184,7 +184,7 @@ const inquirerOtherConfig = [
     }
 ]
 // -----问题配置[结束]-----
-const buildConfig = async () => {
+export default async () => {
     const local = await inquirer.prompt(inquirerLocalConfig);
     const env: { [envKey: string]: DeployConfigEnv } = {}
     const deployEnvTypesConfig = await inquirer.prompt(inquirerDeployEnvTypesConfig)
@@ -239,4 +239,3 @@ const buildConfig = async () => {
     return deployConfig
 }
 
-export default buildConfig

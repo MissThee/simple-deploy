@@ -9,6 +9,7 @@ import archiver from 'archiver'
 import os from "os";
 import ss from '../../utils/simpleSpinner'
 import {isSafePath} from "../../utils/tools";
+import {configFileExt} from "../../utils/global";
 
 export const deployLocalTmpPath = '.deployTmp' + '_' + Date.now()
 
@@ -25,11 +26,29 @@ export const confirmDeploy = (param: string, envs: string[]) => {
 
 // 检查配置文件
 export const getCorrectConfigFile = async (configFilePath: string, envKeys: string[]): Promise<void | DeployConfig> => {
-    ss.start('Check Configuration', ' ', chalk.magenta(configFilePath))
+    ss.start('Check Configuration', ' ', chalk.magenta(configFilePath + '[.js/.json]'))
     //检查配置文件存在
-    await fsp.access(configFilePath, fs.constants.F_OK)
+    let configFileFullPath = null
+    try {
+        configFileFullPath = configFilePath + configFileExt.JS
+        await fsp.access(configFileFullPath, fs.constants.F_OK)
+    } catch (e) {
+        configFileFullPath = null
+    }
+    if (!configFileFullPath) {
+        try {
+            configFileFullPath = configFilePath + configFileExt.JSON
+            await fsp.access(configFileFullPath, fs.constants.F_OK)
+        } catch (e) {
+            configFileFullPath = null
+        }
+    }
+    if (!configFileFullPath) {
+        throw 'config file ' + chalk.magenta(configFilePath + configFileExt.JS) + ' or ' + chalk.magenta(configFilePath + configFileExt.JSON) + ' not exist'
+    }
+    ss.start('Check Configuration', ' ', chalk.magenta(configFileFullPath))
     // 获取配置文件
-    const configFile: DeployConfig = require(configFilePath)
+    const configFile: DeployConfig = require(configFileFullPath)
     // 收集检查的错误
     const errorParamArr: { param: string, reason: string }[] = []
     let isOk = true;
@@ -87,7 +106,7 @@ export const getCorrectConfigFile = async (configFilePath: string, envKeys: stri
                     if (path.normalize(fileMapNode[key]).replace(/\\/g, '/').match(/^\/.+?\/.+?/) === null) {
                         errorParamArr.push({
                             param: 'env.' + envKey + 'fileMap.' + key,
-                            reason: lang('Absolute path') + '. ' + lang('At least two levels of directory')
+                            reason: lang('At least two levels of directories are required to use absolute paths')
                         })
                         isOk = false
                     }
@@ -104,7 +123,7 @@ export const getCorrectConfigFile = async (configFilePath: string, envKeys: stri
     if (!isOk) {
         throw errorParamArr.map(item => lang('Error Param') + ' ' + chalk.magenta(item.param) + ' ' + chalk.red(item.reason)).join('\r\n')
     }
-    ss.succeed()
+    ss.succeed('Check Configuration', ' ', chalk.magenta(configFileFullPath))
     return configFile
 }
 

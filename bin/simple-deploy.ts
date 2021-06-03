@@ -34,9 +34,10 @@ program.command('deploy', {isDefault: true})
     .description('deploy file')
     .option('-e, --environment <environment_key...>', 'deploy environment')
     .option('-l, --language <language_key>', 'language')
+    .option('-d, --directly', 'execute deploy process directly')
     .action(async (opts: any) => {
         i18n.setLang(opts.language)
-        await deploy(opts.environment)
+        await deploy(opts)
     })
 
 program.parse(process.argv)

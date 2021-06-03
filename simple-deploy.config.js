@@ -1,19 +1,19 @@
-{
+module.exports = {
 	"local": {
-		"projectName": "a",
+		"projectName": "@missthee/simple-deploy",
 		"sshPrivateKeyPath": "~/.ssh/id_rsa",
 		"sshPassphrase": ""
 	},
 	"env": {
 		"dev": {
 			"project": {
-				"projectBuildScript": "tsc"
+				"projectBuildScript": "tsc --watch"
 			},
 			"fileMap": {
-				"dist": "/foo/bar"
+				"dist": "\\example1\\example2"
 			},
 			"server": {
-				"serverHost": "127.0.0.1",
+				"serverHost": "",
 				"serverPort": 22,
 				"serverUsername": "root",
 				"serverPassword": ""

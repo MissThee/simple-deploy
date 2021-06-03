@@ -1,4 +1,5 @@
 {
+  "exportConfigFileType": "导出配置文件类型",
   "projectName": "项目名称",
   "sshPrivateKeyPath": "ssh私钥路径",
   "sshPassphrase": "ssh私钥口令",
@@ -24,5 +25,5 @@
   "Absolute path": "绝对路径",
   "At least two levels of directory": "至少三层深度目录",
   "Generate configuration file": "生成配置文件",
-  "The configuration file already exists, creating it again will overwrite the existing file": "配置文件已存在，再次创建将覆盖现有文件"
+  "The configuration file already exists, creating it again will overwrite the existing file": "配置文件已存在，再次创建将覆盖现有文件",
 }
