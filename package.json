@@ -5,11 +5,12 @@
   "main": "index.js",
   "scripts": {
     "watch": "tsc --watch",
-    "init": "node bin/simple-deploy.js init ",
-    "init zh-CH": "node bin/simple-deploy.js init -l zh-CN",
-    "default": "node bin/simple-deploy.js -e dev",
-    "errorTest": "node bin/simple-deploy.js deploy -e thisIsATestParam",
-    "publish": "npm publish --access public"
+    "publish": "node ./utils/FileFormatter.js && npm publish --access public",
+    "test:init": "node bin/simple-deploy.js init ",
+    "test:init zh-CH": "node bin/simple-deploy.js init -l zh-CN",
+    "test:default": "node bin/simple-deploy.js -e dev",
+    "test:error": "node bin/simple-deploy.js deploy -e thisIsATestParam",
+    "test": "concurrently \"node build/build.js test1\" \"node build/build.js test2\" 并发执行多个 "
   },
   "keywords": [
     "deploy",
