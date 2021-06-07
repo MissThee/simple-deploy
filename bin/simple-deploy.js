@@ -45,6 +45,7 @@ var path_1 = __importDefault(require("path"));
 var init_1 = __importDefault(require("../lib/init"));
 var deploy_1 = __importDefault(require("../lib/deploy"));
 var lang_1 = require("../lang");
+var checkForUpdates_1 = __importDefault(require("../utils/checkForUpdates"));
 // 1、在package.json中配置
 // "bin": {
 //     "simple-deploy": "bin/simple-deploy.js"
@@ -63,6 +64,7 @@ program.command('init') // 决定解析命令后，执行哪块儿代码
     .description('init deploy configuration')
     .option('-l, --language <language_key>', 'language') // --language 决定opts中属性
     .action(function (opts) { return __awaiter(void 0, void 0, void 0, function () {
+    var e_1;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -70,7 +72,17 @@ program.command('init') // 决定解析命令后，执行哪块儿代码
                 return [4 /*yield*/, init_1.default(global_1.configFilePath)];
             case 1:
                 _a.sent();
-                return [2 /*return*/];
+                _a.label = 2;
+            case 2:
+                _a.trys.push([2, 4, , 5]);
+                return [4 /*yield*/, checkForUpdates_1.default()];
+            case 3:
+                _a.sent();
+                return [3 /*break*/, 5];
+            case 4:
+                e_1 = _a.sent();
+                return [3 /*break*/, 5];
+            case 5: return [2 /*return*/];
         }
     });
 }); });
@@ -81,6 +93,7 @@ program.command('deploy', { isDefault: true })
     .option('-l, --language <language_key>', 'language')
     .option('-d, --directly', 'execute deploy process directly')
     .action(function (opts) { return __awaiter(void 0, void 0, void 0, function () {
+    var e_2;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -88,7 +101,17 @@ program.command('deploy', { isDefault: true })
                 return [4 /*yield*/, deploy_1.default(opts)];
             case 1:
                 _a.sent();
-                return [2 /*return*/];
+                _a.label = 2;
+            case 2:
+                _a.trys.push([2, 4, , 5]);
+                return [4 /*yield*/, checkForUpdates_1.default()];
+            case 3:
+                _a.sent();
+                return [3 /*break*/, 5];
+            case 4:
+                e_2 = _a.sent();
+                return [3 /*break*/, 5];
+            case 5: return [2 /*return*/];
         }
     });
 }); });

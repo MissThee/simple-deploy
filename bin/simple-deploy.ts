@@ -4,6 +4,7 @@ import path from 'path'
 import init from '../lib/init'
 import deploy from "../lib/deploy";
 import {i18n} from '../lang'
+import checkForUpdates from '../utils/checkForUpdates'
 // 1、在package.json中配置
 // "bin": {
 //     "simple-deploy": "bin/simple-deploy.js"
@@ -28,6 +29,9 @@ program.command('init')// 决定解析命令后，执行哪块儿代码
     .action(async (opts: any) => {
         i18n.setLang(opts.language)
         await init(configFilePath);
+        try {
+            await checkForUpdates()
+        } catch (e) {}
     })
 //注意此处不能直接链式直接使用.command，会被认为是上一个command的子指令。需要重新使用program添加.command指令
 program.command('deploy', {isDefault: true})
@@ -38,6 +42,9 @@ program.command('deploy', {isDefault: true})
     .action(async (opts: any) => {
         i18n.setLang(opts.language)
         await deploy(opts)
+        try {
+            await checkForUpdates()
+        } catch (e) {}
     })
 
 program.parse(process.argv)

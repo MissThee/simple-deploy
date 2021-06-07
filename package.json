@@ -1,6 +1,6 @@
 {
   "name": "@missthee/simple-deploy",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Simple tool for processing scripts and uploading files",
   "main": "index.js",
   "scripts": {

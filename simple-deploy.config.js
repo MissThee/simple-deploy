@@ -13,7 +13,26 @@ module.exports = {
 				"dist": "\\example1\\example2"
 			},
 			"server": {
-				"serverHost": "",
+				"serverHost": "127.0.0.1",
+				"serverPort": 22,
+				"serverUsername": "root",
+				"serverPassword": ""
+			},
+			"other": {
+				"isClearServerPathBeforeDeploy": false,
+				"isClearLocalDistFileBeforeBuild": false,
+				"isClearLocalDistFileAfterDeploy": false
+			}
+		},
+		"prod": {
+			"project": {
+				"projectBuildScript": "tsc --watch"
+			},
+			"fileMap": {
+				"dist": "\\example1\\example2"
+			},
+			"server": {
+				"serverHost": "127.0.0.1",
 				"serverPort": 22,
 				"serverUsername": "root",
 				"serverPassword": ""
