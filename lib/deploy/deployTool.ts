@@ -248,9 +248,44 @@ export const removeFileSync = (message: string, ...localPaths: string[]) => {
     }
     console.log(' ' + chalk.bgGray('CLEAR UP') + ' ')
 }
+
+// 测试ssh连通
+export const sshCheck = async (host: string, port: number, username: string, privateKey?: string, passphrase?: string, password?: string) => {
+    if (privateKey && privateKey.trimStart().startsWith('~')) {
+        privateKey = path.join(os.homedir(), privateKey.substring(privateKey.indexOf('~') + 1))
+    }
+    let sshConfig = {
+        host: host,
+        port: port,
+        username: username,
+        password: password,
+        privateKey: privateKey,
+        passphrase: passphrase,
+        tryKeyboard: true,
+    }
+    if (!privateKey && !password) {
+        const answers = await inquirer.prompt([
+            {
+                type: 'password',
+                name: 'password',
+                message: lang('please input server password')
+            }
+        ])
+        sshConfig.password = answers.password
+    }
+    !password && delete sshConfig.password
+    !privateKey && delete sshConfig.privateKey
+    !passphrase && delete sshConfig.passphrase
+    const ssh = new NodeSSH()
+    ss.start('SSH Test', ' ', chalk.magenta(host))
+    await ssh.connect(sshConfig)
+    await ssh.dispose()
+    ss.succeed()
+    return ssh
+}
+
 // 连接ssh
 export const sshConnect = async (host: string, port: number, username: string, privateKey?: string, passphrase?: string, password?: string) => {
-
     if (privateKey && privateKey.trimStart().startsWith('~')) {
         privateKey = path.join(os.homedir(), privateKey.substring(privateKey.indexOf('~') + 1))
     }
