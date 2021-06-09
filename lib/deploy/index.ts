@@ -38,8 +38,8 @@ export default async (opts: any) => {
                 }
             }
         }
+        ss.info(chalk.blue.bold('All Environment'))
         for (const currentEnvKey of envKeys) {
-            ss.info(chalk.blue.bold('[All Environment]'))
             let currentEnv = configFile.env[currentEnvKey]
             // 连接ssh
             const ssh = await deployTool.sshCheck(
@@ -55,7 +55,7 @@ export default async (opts: any) => {
         let previousProjectBuildScript = null
         // 遍历需要执行的环境配置
         for (const currentEnvKey of envKeys) {
-            ss.info('Current Environment', ' ', chalk.blue.bold(currentEnvKey))
+            ss.info(chalk.blue('Current Environment'), ' ', chalk.magenta(currentEnvKey))
             const currentEnv = configFile.env[currentEnvKey]
 
             if (currentEnv.other?.isClearLocalDistFileBeforeBuild) {
