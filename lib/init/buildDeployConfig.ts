@@ -233,6 +233,8 @@ export default async () => {
                 } else {
                     projectConfig = projectConfig.projectBuildCustomScript.replace('[custom]', '')
                 }
+            } else {
+                projectConfig = projectConfig.projectBuildScript
             }
             currentEnv.project = {projectBuildScript: projectConfig};
         }
