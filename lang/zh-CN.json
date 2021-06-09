@@ -13,6 +13,7 @@
   "serverUsername": "服务器用户名",
   "serverPassword": "服务器密码",
   "serverDeployPath": "服务器部署目录",
+  "needRebuildWhenBuildScriptSameWithPreviousEnv": "是否需要执行与上一环境相同的构造命令",
   "isClearLocalDistFileBeforeBuild": "是否编译前清理本地打包文件",
   "isClearServerPathBeforeDeploy": "是否部署前清理服务器目录",
   "isClearLocalDistFileAfterDeploy": "是否部署后清理本地打包文件",

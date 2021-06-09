@@ -5,8 +5,9 @@ import {lang} from "../../lang";
 import chalk from "chalk";
 import fs, {promises as fsp} from 'fs';
 import ss from '../../utils/simpleSpinner'
-
+import clearTerminal from "../../utils/clearTerminal";
 export default async (configFileOutputPath: string) => {
+    clearTerminal()
     // select the generated file type
     // 选择生成文件类型
     const fileConfig: FileConfig = await buildFileConfig()

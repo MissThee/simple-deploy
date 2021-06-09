@@ -166,13 +166,19 @@ const inquirerFileMapConfig = [
             return path.normalize(input).replace(/\\/g, '/').match(/^\/.+?\/.+?/) !== null
         },
         default: '/example1/example2',
-        filter: ((input: string) => path.normalize(input))
+        filter: ((input: string) => path.normalize(input).replace(/\\/g, '/'))
     },
 
 ]
 // other
 // 其他设置
 const inquirerOtherConfig = [
+    {
+        type: 'confirm',
+        name: 'needRebuildWhenBuildScriptSameWithPreviousEnv',
+        message: () => lang('needRebuildWhenBuildScriptSameWithPreviousEnv'),
+        default: false,
+    },
     {
         type: 'confirm',
         name: 'isClearServerPathBeforeDeploy',
@@ -213,6 +219,7 @@ export default async () => {
                 serverUsername: ""
             },
             other: {
+                needRebuildWhenBuildScriptSameWithPreviousEnv: false,
                 isClearLocalDistFileBeforeBuild: false,
                 isClearLocalDistFileAfterDeploy: false,
                 isClearServerPathBeforeDeploy: false

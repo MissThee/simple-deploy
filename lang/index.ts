@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 // simple i18n
 //单例模式简单国际化工具
+
 class I18n {
     static i18nObj: I18n
     langFileDir = ''

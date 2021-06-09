@@ -19,6 +19,7 @@ declare interface DeployConfigEnv {
         [projectFileOrPath: string]: string
     },
     other?: {
+        needRebuildWhenBuildScriptSameWithPreviousEnv?: boolean,
         isClearLocalDistFileBeforeBuild?: boolean
         isClearServerPathBeforeDeploy?: boolean,
         isClearLocalDistFileAfterDeploy?: boolean

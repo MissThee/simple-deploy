@@ -4,8 +4,10 @@ import {configFilePath} from "../../utils/global";
 import path from 'path';
 import ss from '../../utils/simpleSpinner'
 import * as deployTool from './deployTool'
+import clearTerminal from "../../utils/clearTerminal";
 
 export default async (opts: any) => {
+    clearTerminal()
     const directly = opts.directly
     const envKeys: string[] = opts.environment
     deployTool.clearUp(() => {
@@ -50,17 +52,26 @@ export default async (opts: any) => {
                 currentEnv.server.serverPassword
             )
         }
+        let isFirstEnv = true
+        let previousProjectBuildScript = null
         // 遍历需要执行的环境配置
         for (const currentEnvKey of envKeys) {
             ss.info('Current Environment', ' ', chalk.blue.bold(currentEnvKey))
-            let currentEnv = configFile.env[currentEnvKey]
-            // 本地清理编译目录
+            const currentEnv = configFile.env[currentEnvKey]
+
             if (currentEnv.other?.isClearLocalDistFileBeforeBuild) {
+                // 本地清理编译结果目录
                 await deployTool.removeFile('Dist', ...Object.keys(currentEnv.fileMap))
             }
-            // 本地执行打包命令
-            if (currentEnv.project?.projectBuildScript) {
-                await deployTool.buildCode(currentEnv.project.projectBuildScript)
+            // 判断是否需要执行构造过程
+            if (isFirstEnv || currentEnv.other?.needRebuildWhenBuildScriptSameWithPreviousEnv || previousProjectBuildScript !== currentEnv.project.projectBuildScript) {
+                if (currentEnv.project?.projectBuildScript) {
+                    // 本地执行打包命令
+                    await deployTool.buildCode(currentEnv.project.projectBuildScript)
+                }
+            } else {
+                ss.start('Build Code', ' ', chalk.gray('no need'), chalk.gray('(build script is same with previous running env. can use [needRebuildWhenBuildScriptSameWithPreviousEnv=true] to force build)'))
+                ss.succeed()
             }
             // 本地执行归档命令
             for (let fileMapKey of Object.keys(currentEnv.fileMap)) {
@@ -78,8 +89,8 @@ export default async (opts: any) => {
                 configFile.local.sshPassphrase,
                 currentEnv.server.serverPassword
             )
-            // 远程清理目录
             if (currentEnv.other?.isClearServerPathBeforeDeploy) {
+                // 远程清理目录
                 await deployTool.sshRemoveFile(ssh, ...Object.values(currentEnv.fileMap))
             }
             // 本地文件上传到远程
@@ -102,10 +113,12 @@ export default async (opts: any) => {
             }
             // 断开ssh
             deployTool.sshDisconnect(ssh)
-            //清理编译后的文件
             if (currentEnv.other?.isClearLocalDistFileAfterDeploy) {
+                // 本地清理编译后的文件
                 await deployTool.removeFile('Dist', ...Object.keys(currentEnv.fileMap))
             }
+            previousProjectBuildScript = currentEnv.project.projectBuildScript
+            isFirstEnv = false
         }
         // 本地清理临时文件目录
         await deployTool.removeFile('Tmp Dir', deployTool.deployLocalTmpPath)

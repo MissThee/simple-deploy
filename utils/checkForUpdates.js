@@ -62,7 +62,7 @@ exports.default = (function () { return __awaiter(void 0, void 0, void 0, functi
             });
         });
     }
-    var localPackage, packageName, packageVersion, getServerVersionRes, line1, line2, lineLength, spaceStr, i, longLength, line1Origin, line2Origin, splitStr, i_1;
+    var localPackage, packageName, packageVersion, getServerVersionRes, line1, line2, lineLength, spaceStr, i, longLength, line1Origin, line2Origin, splitStr;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -93,10 +93,7 @@ exports.default = (function () { return __awaiter(void 0, void 0, void 0, functi
                 line1Origin = 'Update available ' + getServerVersionRes + ' → ' + packageVersion;
                 line2Origin = 'Run npm i ' + packageName + ' -D to update';
                 longLength = Math.max(line1Origin.length, line2Origin.length);
-                splitStr = '';
-                for (i_1 = 0; i_1 < longLength; i_1++) {
-                    splitStr += '-';
-                }
+                splitStr = '-'.repeat(longLength);
                 console.info(chalk_1.default.yellow(splitStr));
                 console.info(line1);
                 console.info(line2);
