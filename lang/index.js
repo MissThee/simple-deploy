@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.lang = exports.i18n = void 0;
 var fs_1 = __importDefault(require("fs"));
 var path_1 = __importDefault(require("path"));
+// simple i18n
 //单例模式简单国际化工具
 var I18n = /** @class */ (function () {
     function I18n(langFilePath, langSign) {

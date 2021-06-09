@@ -5,19 +5,11 @@ import init from '../lib/init'
 import deploy from "../lib/deploy";
 import {i18n} from '../lang'
 import checkForUpdates from '../utils/checkForUpdates'
-// 1、在package.json中配置
-// "bin": {
-//     "simple-deploy": "bin/simple-deploy.js"
-// }
-// 其中key值为安装本cli后，启动本cli的指令
 
-// 2、解析命令内容
-// 如 simple-deploy deploy --mode prod
 const packageJsonFilePath = `${path.join(process.cwd())}/package.json`
 const packageJsonFile = fs.existsSync(packageJsonFilePath) ? require(packageJsonFilePath) : {}
 import {Command} from 'commander'
 import {configFilePath} from '../utils/global'
-import {NodeSSH} from "node-ssh";
 
 const program = new Command();
 program
@@ -48,6 +40,16 @@ program.command('deploy', {isDefault: true})
     })
 
 program.parse(process.argv)
+
+// 如何构造node指令
+// 1、在package.json中配置
+// "bin": {
+//     "simple-deploy": "bin/simple-deploy.js"
+// }
+// 其中key值为安装本cli后，启动本cli的指令
+
+// 2、解析命令内容
+// 如 simple-deploy deploy --mode prod
 
 // nodejs解析命令
 // 如执行命令：node bin/simple-deploy,js deploy --mode prod

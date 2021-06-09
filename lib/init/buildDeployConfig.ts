@@ -1,4 +1,5 @@
-// 用户配置填写内容设置
+// User configuration questionnaire
+// 用户配置问卷
 import inquirer from 'inquirer'
 import fs from 'fs'
 import path from 'path'
@@ -9,7 +10,9 @@ import ss from '../../utils/simpleSpinner'
 const packageJsonFileFullName = 'package.json'
 const packageJsonFilePath = path.join(process.cwd(), packageJsonFileFullName)
 const packageJsonFile = fs.existsSync(packageJsonFilePath) ? require(packageJsonFilePath) : {}
+// -----build config[BEGIN]-----
 // -----问题配置[开始]-----
+// local(project name,ssh)
 // 本机配置（项目名，ssh相关）
 const inquirerLocalConfig = [
     {
@@ -32,6 +35,7 @@ const inquirerLocalConfig = [
         message: () => lang('sshPassphrase'),
     },
 ]
+// environment
 // 部署环境设置（有几种部署环境）
 const inquirerDeployEnvTypesConfig = [
     {
@@ -55,6 +59,7 @@ const inquirerDeployEnvTypesConfig = [
         }
     }
 ]
+// project(build script)
 // 项目信息设置（项目打包命令）
 const inquirerProjectConfig = [
     {
@@ -75,6 +80,7 @@ const inquirerProjectConfig = [
                     })
                 }
             }
+            choices.push({name: lang('skip') + ' (' + lang('skip build step') + ')', value: ''})
             choices.push({name: lang('custom') + ' (' + lang('type by myself') + ')', value: '[custom]'})
             return choices;
         }
@@ -86,6 +92,7 @@ const inquirerProjectConfig = [
         when: (answer: any) => !answer.projectBuildScript.indexOf('[custom]')
     }
 ]
+// server(host, port, username, password)
 // 服务器信息设置（Host，Port，用户名，密码）
 const inquirerServerConfig = [
     {
@@ -114,6 +121,7 @@ const inquirerServerConfig = [
         message: () => lang('serverPassword'),
     },
 ]
+// deployment path(file copy mapping information)
 // 部署路径设置（文件拷贝映射信息）
 const inquirerFileMapConfig = [
     {
@@ -162,7 +170,8 @@ const inquirerFileMapConfig = [
     },
 
 ]
-// 部署路径设置（文件拷贝映射信息）
+// other
+// 其他设置
 const inquirerOtherConfig = [
     {
         type: 'confirm',
@@ -183,6 +192,7 @@ const inquirerOtherConfig = [
         default: false,
     }
 ]
+// -----build config[END]-----
 // -----问题配置[结束]-----
 export default async () => {
     const local = await inquirer.prompt(inquirerLocalConfig);
@@ -210,10 +220,12 @@ export default async () => {
         };
         {//.project
             let projectConfig = await inquirer.prompt(inquirerProjectConfig)
-            if (projectConfig.projectBuildScript.indexOf('[custom]')) {
-                projectConfig = projectConfig.projectBuildScript.replace('[command]', '')
-            } else {
-                projectConfig = projectConfig.projectBuildCustomScript.replace('[custom]', '')
+            if (projectConfig.projectBuildScript) {
+                if (projectConfig.projectBuildScript.indexOf('[custom]')) {
+                    projectConfig = projectConfig.projectBuildScript.replace('[command]', '')
+                } else {
+                    projectConfig = projectConfig.projectBuildCustomScript.replace('[custom]', '')
+                }
             }
             currentEnv.project = {projectBuildScript: projectConfig};
         }

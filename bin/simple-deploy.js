@@ -46,13 +46,6 @@ var init_1 = __importDefault(require("../lib/init"));
 var deploy_1 = __importDefault(require("../lib/deploy"));
 var lang_1 = require("../lang");
 var checkForUpdates_1 = __importDefault(require("../utils/checkForUpdates"));
-// 1、在package.json中配置
-// "bin": {
-//     "simple-deploy": "bin/simple-deploy.js"
-// }
-// 其中key值为安装本cli后，启动本cli的指令
-// 2、解析命令内容
-// 如 simple-deploy deploy --mode prod
 var packageJsonFilePath = path_1.default.join(process.cwd()) + "/package.json";
 var packageJsonFile = fs_1.default.existsSync(packageJsonFilePath) ? require(packageJsonFilePath) : {};
 var commander_1 = require("commander");
@@ -116,6 +109,14 @@ program.command('deploy', { isDefault: true })
     });
 }); });
 program.parse(process.argv);
+// 如何构造node指令
+// 1、在package.json中配置
+// "bin": {
+//     "simple-deploy": "bin/simple-deploy.js"
+// }
+// 其中key值为安装本cli后，启动本cli的指令
+// 2、解析命令内容
+// 如 simple-deploy deploy --mode prod
 // nodejs解析命令
 // 如执行命令：node bin/simple-deploy,js deploy --mode prod
 // console.log('process.argv', process.argv)
