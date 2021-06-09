@@ -4,13 +4,12 @@ import {configFilePath} from "../../utils/global";
 import path from 'path';
 import ss from '../../utils/simpleSpinner'
 import * as deployTool from './deployTool'
-import clearTerminal from "../../utils/clearTerminal";
+import processWatcher from "../init/processWatcher";
 
 export default async (opts: any) => {
-    clearTerminal()
     const directly = opts.directly
     const envKeys: string[] = opts.environment
-    deployTool.clearUp(() => {
+    processWatcher(() => {
         // 进程退出前清理临时文件目录
         deployTool.removeFileSync('Tmp Dir', deployTool.deployLocalTmpPath)
     })
@@ -132,6 +131,5 @@ export default async (opts: any) => {
     } finally {
 
     }
-    process.exit()
 }
 

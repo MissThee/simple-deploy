@@ -46,10 +46,15 @@ var init_1 = __importDefault(require("../lib/init"));
 var deploy_1 = __importDefault(require("../lib/deploy"));
 var lang_1 = require("../lang");
 var checkForUpdates_1 = __importDefault(require("../utils/checkForUpdates"));
-var packageJsonFilePath = path_1.default.join(process.cwd()) + "/package.json";
-var packageJsonFile = fs_1.default.existsSync(packageJsonFilePath) ? require(packageJsonFilePath) : {};
 var commander_1 = require("commander");
 var global_1 = require("../utils/global");
+var clearTerminal_1 = __importDefault(require("../utils/clearTerminal"));
+var packageJsonFilePath = path_1.default.join(process.cwd()) + "/package.json";
+var packageJsonFile = fs_1.default.existsSync(packageJsonFilePath) ? require(packageJsonFilePath) : {};
+var updateTip = '';
+checkForUpdates_1.default().then(function (res) {
+    updateTip = res;
+});
 var program = new commander_1.Command();
 program
     .version(packageJsonFile.version, '-v, --version', 'current version');
@@ -57,58 +62,44 @@ program.command('init') // 决定解析命令后，执行哪块儿代码
     .description('init deploy configuration')
     .option('-l, --language <language_key>', 'language') // --language 决定opts中属性
     .action(function (opts) { return __awaiter(void 0, void 0, void 0, function () {
-    var e_1;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
+                clearTerminal_1.default();
                 lang_1.i18n.setLang(opts.language);
                 return [4 /*yield*/, init_1.default(global_1.configFilePath)];
             case 1:
                 _a.sent();
-                _a.label = 2;
-            case 2:
-                _a.trys.push([2, 4, , 5]);
-                return [4 /*yield*/, checkForUpdates_1.default()];
-            case 3:
-                _a.sent();
-                return [3 /*break*/, 5];
-            case 4:
-                e_1 = _a.sent();
-                return [3 /*break*/, 5];
-            case 5: return [2 /*return*/];
+                console.log(updateTip);
+                process.exit();
+                return [2 /*return*/];
         }
     });
 }); });
-//注意此处不能直接链式直接使用.command，会被认为是上一个command的子指令。需要重新使用program添加.command指令
 program.command('deploy', { isDefault: true })
     .description('deploy file')
     .option('-e, --environment <environment_key...>', 'deploy environment')
     .option('-l, --language <language_key>', 'language')
     .option('-d, --directly', 'execute deploy process directly')
     .action(function (opts) { return __awaiter(void 0, void 0, void 0, function () {
-    var e_2;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
+                clearTerminal_1.default();
                 lang_1.i18n.setLang(opts.language);
                 return [4 /*yield*/, deploy_1.default(opts)];
             case 1:
                 _a.sent();
-                _a.label = 2;
-            case 2:
-                _a.trys.push([2, 4, , 5]);
-                return [4 /*yield*/, checkForUpdates_1.default()];
-            case 3:
-                _a.sent();
-                return [3 /*break*/, 5];
-            case 4:
-                e_2 = _a.sent();
-                return [3 /*break*/, 5];
-            case 5: return [2 /*return*/];
+                console.log(updateTip);
+                process.exit();
+                return [2 /*return*/];
         }
     });
 }); });
 program.parse(process.argv);
+// program.command().command()
+// program.command();   program.command();
+// 注意直接链式直接使用.command，会被认为是上一个command的子指令。需要重新使用program添加.command指令
 // 如何构造node指令
 // 1、在package.json中配置
 // "bin": {

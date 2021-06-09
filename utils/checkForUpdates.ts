@@ -1,7 +1,7 @@
 import path from "path";
 import chalk from "chalk";
 
-export default async () => {
+export default async (): Promise<string> => {
     function getLocalPackage() { // 从本地获取版本号
         return require(path.resolve(__dirname, `../package.json`)) // 从 package 中获取版本
     }
@@ -19,7 +19,7 @@ export default async () => {
                     resolve(latest)
                 })
             }).on(`error`, (err: { message: string | undefined }) => {
-                throw new Error(err.message)
+                resolve(null)
             })
         })
     }
@@ -28,19 +28,14 @@ export default async () => {
     const packageName = localPackage.name
     const packageVersion = localPackage.version
     const getServerVersionRes = await getServerVersion(packageName)
-    if (packageVersion == getServerVersionRes) {
-        return
+    if (packageVersion === getServerVersionRes || !getServerVersionRes) {
+        return ''
     }
 
-    let line1 = 'Update available ' + getServerVersionRes + ' → ' + chalk.green(packageVersion)
+    let line1 = 'Update available ' + packageVersion + ' → ' + chalk.green(getServerVersionRes)
     let line2 = 'Run ' + chalk.magenta('npm i ' + packageName + ' -D') + ' to update'
     const lineLength = line1.length - line2.length
-    let spaceStr = ''
-    let i = 0
-    while (i < Math.abs(lineLength / 2)) {
-        spaceStr += ' '
-        i++
-    }
+    const spaceStr = ' '.repeat(Math.abs(lineLength / 2))
     if (lineLength > 0) {
         line2 = spaceStr + line2
     }
@@ -48,12 +43,9 @@ export default async () => {
         line1 = spaceStr + line1
     }
     let longLength: number
-    let line1Origin = 'Update available ' + getServerVersionRes + ' → ' + packageVersion
+    let line1Origin = 'Update available ' + packageVersion + ' → ' + getServerVersionRes
     let line2Origin = 'Run npm i ' + packageName + ' -D to update'
     longLength = Math.max(line1Origin.length, line2Origin.length)
     const splitStr = '-'.repeat(longLength)
-    console.info(chalk.yellow(splitStr))
-    console.info(line1)
-    console.info(line2)
-    console.info(chalk.yellow(splitStr))
+    return '\n' + chalk.yellow(splitStr) + '\n' + line1 + '\n' + line2 + '\n' + chalk.yellow(splitStr) + '\n'
 }

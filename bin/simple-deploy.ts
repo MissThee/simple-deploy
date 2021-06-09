@@ -5,11 +5,17 @@ import init from '../lib/init'
 import deploy from "../lib/deploy";
 import {i18n} from '../lang'
 import checkForUpdates from '../utils/checkForUpdates'
+import {Command} from 'commander'
+import {configFilePath} from '../utils/global'
+import clearTerminal from "../utils/clearTerminal";
 
 const packageJsonFilePath = `${path.join(process.cwd())}/package.json`
 const packageJsonFile = fs.existsSync(packageJsonFilePath) ? require(packageJsonFilePath) : {}
-import {Command} from 'commander'
-import {configFilePath} from '../utils/global'
+
+let updateTip = ''
+checkForUpdates().then((res) => {
+    updateTip = res
+})
 
 const program = new Command();
 program
@@ -19,27 +25,32 @@ program.command('init')// 决定解析命令后，执行哪块儿代码
     .description('init deploy configuration')
     .option('-l, --language <language_key>', 'language') // --language 决定opts中属性
     .action(async (opts: any) => {
+        clearTerminal()
         i18n.setLang(opts.language)
         await init(configFilePath);
-        try {
-            await checkForUpdates()
-        } catch (e) {}
+        console.log(updateTip)
+        process.exit()
     })
-//注意此处不能直接链式直接使用.command，会被认为是上一个command的子指令。需要重新使用program添加.command指令
+
 program.command('deploy', {isDefault: true})
     .description('deploy file')
     .option('-e, --environment <environment_key...>', 'deploy environment')
     .option('-l, --language <language_key>', 'language')
     .option('-d, --directly', 'execute deploy process directly')
     .action(async (opts: any) => {
+        clearTerminal()
         i18n.setLang(opts.language)
         await deploy(opts)
-        try {
-            await checkForUpdates()
-        } catch (e) {}
+        console.log(updateTip)
+        process.exit()
     })
 
 program.parse(process.argv)
+
+
+// program.command().command()
+// program.command();   program.command();
+// 注意直接链式直接使用.command，会被认为是上一个command的子指令。需要重新使用program添加.command指令
 
 // 如何构造node指令
 // 1、在package.json中配置

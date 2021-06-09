@@ -58,11 +58,11 @@ exports.default = (function () { return __awaiter(void 0, void 0, void 0, functi
                     resolve(latest);
                 });
             }).on("error", function (err) {
-                throw new Error(err.message);
+                resolve(null);
             });
         });
     }
-    var localPackage, packageName, packageVersion, getServerVersionRes, line1, line2, lineLength, spaceStr, i, longLength, line1Origin, line2Origin, splitStr;
+    var localPackage, packageName, packageVersion, getServerVersionRes, line1, line2, lineLength, spaceStr, longLength, line1Origin, line2Origin, splitStr;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -72,33 +72,24 @@ exports.default = (function () { return __awaiter(void 0, void 0, void 0, functi
                 return [4 /*yield*/, getServerVersion(packageName)];
             case 1:
                 getServerVersionRes = _a.sent();
-                if (packageVersion == getServerVersionRes) {
-                    return [2 /*return*/];
+                if (packageVersion === getServerVersionRes || !getServerVersionRes) {
+                    return [2 /*return*/, ''];
                 }
-                line1 = 'Update available ' + getServerVersionRes + ' → ' + chalk_1.default.green(packageVersion);
+                line1 = 'Update available ' + packageVersion + ' → ' + chalk_1.default.green(getServerVersionRes);
                 line2 = 'Run ' + chalk_1.default.magenta('npm i ' + packageName + ' -D') + ' to update';
                 lineLength = line1.length - line2.length;
-                spaceStr = '';
-                i = 0;
-                while (i < Math.abs(lineLength / 2)) {
-                    spaceStr += ' ';
-                    i++;
-                }
+                spaceStr = ' '.repeat(Math.abs(lineLength / 2));
                 if (lineLength > 0) {
                     line2 = spaceStr + line2;
                 }
                 if (lineLength <= 0) {
                     line1 = spaceStr + line1;
                 }
-                line1Origin = 'Update available ' + getServerVersionRes + ' → ' + packageVersion;
+                line1Origin = 'Update available ' + packageVersion + ' → ' + getServerVersionRes;
                 line2Origin = 'Run npm i ' + packageName + ' -D to update';
                 longLength = Math.max(line1Origin.length, line2Origin.length);
                 splitStr = '-'.repeat(longLength);
-                console.info(chalk_1.default.yellow(splitStr));
-                console.info(line1);
-                console.info(line2);
-                console.info(chalk_1.default.yellow(splitStr));
-                return [2 /*return*/];
+                return [2 /*return*/, '\n' + chalk_1.default.yellow(splitStr) + '\n' + line1 + '\n' + line2 + '\n' + chalk_1.default.yellow(splitStr) + '\n'];
         }
     });
 }); });
