@@ -51,10 +51,7 @@ export default async () => {
     let line1Origin = 'Update available ' + getServerVersionRes + ' → ' + packageVersion
     let line2Origin = 'Run npm i ' + packageName + ' -D to update'
     longLength = Math.max(line1Origin.length, line2Origin.length)
-    let splitStr = ''
-    for (let i = 0; i < longLength; i++) {
-        splitStr += '-'
-    }
+    const splitStr = '-'.repeat(longLength)
     console.info(chalk.yellow(splitStr))
     console.info(line1)
     console.info(line2)

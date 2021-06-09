@@ -89,6 +89,7 @@ npm i @missthee/simple-deploy -D
               "dist1/index.html": "/www/wwwroot/default/bbb/rename.html"
             },
             "other": {
+              "needRebuildWhenBuildScriptSameWithPreviousEnv": false,
               "isClearLocalDistFileBeforeBuild": false,
               "isClearServerPathBeforeDeploy": false,
               "isClearLocalDistFileAfterDeploy": false
@@ -109,6 +110,7 @@ npm i @missthee/simple-deploy -D
               "dist1/index.html": "/www/wwwroot/default/bbb/rename.html"
             },
             "other": {
+              "needRebuildWhenBuildScriptSameWithPreviousEnv": false,
               "isClearLocalDistFileBeforeBuild": false,
               "isClearServerPathBeforeDeploy": false,
               "isClearLocalDistFileAfterDeploy": false
@@ -118,11 +120,13 @@ npm i @missthee/simple-deploy -D
       }
    ```
 + `other` option
-    + `isClearLocalDistFileBeforeBuild`  
+    + `needRebuildWhenHasSameBuildScriptWithPreviousEnv`
+      if buildScript in current env was same as previous env:`false` skip build; `true` run build script.
+    + `isClearLocalDistFileBeforeBuild`
       Use the key of `fileMap`, and use the project root directory as the starting path to clean up files before build.
-    + `isClearServerPathBeforeDeploy`  
+    + `isClearServerPathBeforeDeploy`
       Use the value of `fileMap`, and use the project root directory as the starting path to clean up files before deployment.
-    + `isClearLocalDistFileAfterDeploy`  
+    + `isClearLocalDistFileAfterDeploy`
       Use the key of `fileMap`, and use the project root directory as the starting path to clean up files after deployment.
 
 ### NOTE
