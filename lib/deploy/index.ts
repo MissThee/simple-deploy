@@ -41,8 +41,8 @@ export default async (opts: any) => {
         ss.info(chalk.blue.bold('All Environment'))
         for (const currentEnvKey of envKeys) {
             let currentEnv = configFile.env[currentEnvKey]
-            // 连接ssh
-            const ssh = await deployTool.sshCheck(
+            // 测试连接ssh
+            await deployTool.sshCheck(
                 currentEnv.server.serverHost,
                 currentEnv.server.serverPort,
                 currentEnv.server.serverUsername,

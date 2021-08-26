@@ -40,8 +40,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var fs_1 = __importDefault(require("fs"));
-var path_1 = __importDefault(require("path"));
 var init_1 = __importDefault(require("../lib/init"));
 var deploy_1 = __importDefault(require("../lib/deploy"));
 var lang_1 = require("../lang");
@@ -49,8 +47,8 @@ var checkForUpdates_1 = __importDefault(require("../utils/checkForUpdates"));
 var commander_1 = require("commander");
 var global_1 = require("../utils/global");
 var clearTerminal_1 = __importDefault(require("../utils/clearTerminal"));
-var packageJsonFilePath = path_1.default.join(process.cwd()) + "/package.json";
-var packageJsonFile = fs_1.default.existsSync(packageJsonFilePath) ? require(packageJsonFilePath) : {};
+// const packageJsonFilePath = `${path.join(process.cwd())}/package.json` // 实际执行命令的项目根目录package.json
+var packageJsonFile = require('../package.json');
 var updateTip = '';
 checkForUpdates_1.default().then(function (res) {
     updateTip = res;

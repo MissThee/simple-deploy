@@ -33,7 +33,7 @@ export default async (): Promise<string> => {
     }
 
     let line1 = 'Update available ' + packageVersion + ' → ' + chalk.green(getServerVersionRes)
-    let line2 = 'Run ' + chalk.magenta('npm i ' + packageName + ' -D') + ' to update'
+    let line2 = 'Run ' + chalk.magenta('npm i ' + packageName + '@' + getServerVersionRes+ ' -D') + ' to update'
     const lineLength = line1.length - line2.length
     const spaceStr = ' '.repeat(Math.abs(lineLength / 2))
     if (lineLength > 0) {
@@ -44,7 +44,7 @@ export default async (): Promise<string> => {
     }
     let longLength: number
     let line1Origin = 'Update available ' + packageVersion + ' → ' + getServerVersionRes
-    let line2Origin = 'Run npm i ' + packageName + ' -D to update'
+    let line2Origin = 'Run npm i ' + packageName + '@' + getServerVersionRes + ' -D to update'
     longLength = Math.max(line1Origin.length, line2Origin.length)
     const splitStr = '-'.repeat(longLength)
     return '\n' + chalk.yellow(splitStr) + '\n' + line1 + '\n' + line2 + '\n' + chalk.yellow(splitStr) + '\n'

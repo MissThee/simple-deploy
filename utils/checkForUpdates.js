@@ -76,7 +76,7 @@ exports.default = (function () { return __awaiter(void 0, void 0, void 0, functi
                     return [2 /*return*/, ''];
                 }
                 line1 = 'Update available ' + packageVersion + ' → ' + chalk_1.default.green(getServerVersionRes);
-                line2 = 'Run ' + chalk_1.default.magenta('npm i ' + packageName + ' -D') + ' to update';
+                line2 = 'Run ' + chalk_1.default.magenta('npm i ' + packageName + '@' + getServerVersionRes + ' -D') + ' to update';
                 lineLength = line1.length - line2.length;
                 spaceStr = ' '.repeat(Math.abs(lineLength / 2));
                 if (lineLength > 0) {
@@ -86,7 +86,7 @@ exports.default = (function () { return __awaiter(void 0, void 0, void 0, functi
                     line1 = spaceStr + line1;
                 }
                 line1Origin = 'Update available ' + packageVersion + ' → ' + getServerVersionRes;
-                line2Origin = 'Run npm i ' + packageName + ' -D to update';
+                line2Origin = 'Run npm i ' + packageName + '@' + getServerVersionRes + ' -D to update';
                 longLength = Math.max(line1Origin.length, line2Origin.length);
                 splitStr = '-'.repeat(longLength);
                 return [2 /*return*/, '\n' + chalk_1.default.yellow(splitStr) + '\n' + line1 + '\n' + line2 + '\n' + chalk_1.default.yellow(splitStr) + '\n'];

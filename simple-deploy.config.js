@@ -7,7 +7,7 @@ module.exports = {
 	"env": {
 		"dev": {
 			"project": {
-				"projectBuildScript": "tsc --watch"
+				"projectBuildScript": "tsc"
 			},
 			"fileMap": {
 				"dist": "/example1/example2"

@@ -2,7 +2,7 @@ import {lang} from "../../lang";
 import chalk from "chalk";
 import {NodeSSH} from 'node-ssh';
 import path from 'path';
-import fs, {promises as fsp} from 'fs';
+import fsExtra, {removeSync} from 'fs-extra'
 import inquirer from 'inquirer'
 import childProcess, {ExecException} from "child_process";
 import archiver from 'archiver'
@@ -31,14 +31,14 @@ export const getCorrectConfigFile = async (configFilePath: string, envKeys: stri
     let configFileFullPath = null
     try {
         configFileFullPath = configFilePath + configFileExt.JS
-        await fsp.access(configFileFullPath, fs.constants.F_OK)
+        await fsExtra.access(configFileFullPath,fsExtra.constants.F_OK)
     } catch (e) {
         configFileFullPath = null
     }
     if (!configFileFullPath) {
         try {
             configFileFullPath = configFilePath + configFileExt.JSON
-            await fsp.access(configFileFullPath, fs.constants.F_OK)
+            await fsExtra.access(configFileFullPath, fsExtra.constants.F_OK)
         } catch (e) {
             configFileFullPath = null
         }
@@ -162,7 +162,7 @@ export const getLocalZipFilePathByProjectPath = (projectPath: string) => {
 export const getRemoteZipFilePath = async (projectPath: string, remotePath: string) => {
     const localZipFile = getLocalZipFilePathByProjectPath(projectPath)
     //原文件是文件，且目标目录不以/结尾，直接拷贝目标目录
-    if ((await fsp.stat(path.join(process.cwd(), projectPath))).isFile() && !remotePath.replace(/\\/g, '/').endsWith('/')) {
+    if ((await fsExtra.stat(path.join(process.cwd(), projectPath))).isFile() && !remotePath.replace(/\\/g, '/').endsWith('/')) {
         return path.join(remotePath.substring(0, remotePath.lastIndexOf(path.basename(remotePath))), path.basename(localZipFile))
     } else {
         return path.join(remotePath, path.basename(localZipFile))
@@ -171,11 +171,11 @@ export const getRemoteZipFilePath = async (projectPath: string, remotePath: stri
 
 // 递归创建目录
 export const mkdirsSync = (dirname: string) => {
-    if (dirname === '' || fs.existsSync(dirname)) {
+    if (dirname === '' || fsExtra.existsSync(dirname)) {
         return true;
     } else {
         if (mkdirsSync(path.dirname(dirname))) {
-            fs.mkdirSync(dirname);
+            fsExtra.mkdirSync(dirname);
             return true;
         }
     }
@@ -184,7 +184,7 @@ export const mkdirsSync = (dirname: string) => {
 // 创建临时存储目录
 export const createDir = async (filePath: string) => {
     let dirPath = filePath.substring(0, filePath.lastIndexOf(path.basename(filePath)))
-    if (fs.existsSync(dirPath)) {
+    if (fsExtra.existsSync(dirPath)) {
         return
     }
     ss.start('LOCAL Create Dir', ' ', chalk.magenta(dirPath))
@@ -200,7 +200,7 @@ export const buildZip = async (sourcePath: string, outputFile: string) => {
         zlib: {level: 9},
         forceLocalTime: true
     })
-    const sourcePathStat = await fsp.stat(sourcePath)
+    const sourcePathStat = await fsExtra.stat(sourcePath)
     if (sourcePathStat.isFile()) {
         archive.file(sourcePath, {name: path.basename(sourcePath)})
     } else if (sourcePathStat.isDirectory()) {
@@ -208,7 +208,7 @@ export const buildZip = async (sourcePath: string, outputFile: string) => {
     } else {
         throw lang('unknown file type') + ': ' + sourcePath
     }
-    archive.pipe(fs.createWriteStream(outputFile))
+    archive.pipe(fsExtra.createWriteStream(outputFile))
     await archive.finalize()
     ss.succeedAppend(" ", chalk.yellow(lang('to')), ' ', chalk.magenta(path.normalize(outputFile)))
 }
@@ -216,7 +216,7 @@ export const buildZip = async (sourcePath: string, outputFile: string) => {
 export const removeFile = async (message: string, ...localPaths: string[]) => {
     let isFileExist = false
     for (const localPath of localPaths) {
-        if (fs.existsSync(localPath)) {
+        if (fsExtra.existsSync(localPath)) {
             isFileExist = true
             break;
         }
@@ -226,7 +226,7 @@ export const removeFile = async (message: string, ...localPaths: string[]) => {
     }
     ss.start('LOCAL Delete File', ' ', message)
     for (const localPath of localPaths) {
-        await fsp.rm(path.join(process.cwd(), localPath), {recursive: true, force: true})
+        await fsExtra.remove(path.join(process.cwd(), localPath))
     }
     ss.succeedAppend(' ', chalk.magenta(localPaths.map(localPath => path.normalize(path.join(process.cwd(), localPath))).join(' , ')))
 }
@@ -234,7 +234,7 @@ export const removeFile = async (message: string, ...localPaths: string[]) => {
 export const removeFileSync = (message: string, ...localPaths: string[]) => {
     let isFileExist = false
     for (const localPath of localPaths) {
-        if (fs.existsSync(localPath)) {
+        if (fsExtra.existsSync(localPath)) {
             isFileExist = true
             break;
         }
@@ -243,8 +243,7 @@ export const removeFileSync = (message: string, ...localPaths: string[]) => {
         return
     }
     for (const localPath of localPaths) {
-        fs.rm(path.join(process.cwd(), localPath), {recursive: true, force: true}, () => {
-        })
+        fsExtra.removeSync(path.join(process.cwd(), localPath))
     }
     console.log(' ' + chalk.bgGray('CLEAR UP') + ' ')
 }
@@ -387,7 +386,7 @@ const sshRenameFile = async (ssh: NodeSSH, remoteFile: string, newName: string) 
 
 //远程文件改名
 export const sshRenameFileByFullPath = async (ssh: NodeSSH, projectPath: string, remotePath: string) => {
-    if ((await fsp.stat(path.join(process.cwd(), projectPath))).isFile() && !remotePath.replace(/\\/g, '/').endsWith('/')) {
+    if ((await fsExtra.stat(path.join(process.cwd(), projectPath))).isFile() && !remotePath.replace(/\\/g, '/').endsWith('/')) {
         //使用远程文件全路径 和 本地文件全路径截取的最后一部分文件名拼接，找到未改名称的远程文件
         const remoteFileBeforeRename = path.join(
             remotePath.substring(0, remotePath.lastIndexOf(path.basename(remotePath))),

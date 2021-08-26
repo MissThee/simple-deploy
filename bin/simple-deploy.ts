@@ -9,8 +9,8 @@ import {Command} from 'commander'
 import {configFilePath} from '../utils/global'
 import clearTerminal from "../utils/clearTerminal";
 
-const packageJsonFilePath = `${path.join(process.cwd())}/package.json`
-const packageJsonFile = fs.existsSync(packageJsonFilePath) ? require(packageJsonFilePath) : {}
+// const packageJsonFilePath = `${path.join(process.cwd())}/package.json` // 实际执行命令的项目根目录package.json
+const packageJsonFile = require('../package.json')
 
 let updateTip = ''
 checkForUpdates().then((res) => {
