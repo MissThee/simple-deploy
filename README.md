@@ -130,4 +130,4 @@ npm i @missthee/simple-deploy -D
       Use the key of `fileMap`, and use the project root directory as the starting path to clean up files after deployment.
 
 ### NOTE
-  Line breaks in entry file `/bin/simple-deploy.js` require `LF`(\n) to fit macOS
+  Only for linux server with `unzip`,`rm`,`mv` command
