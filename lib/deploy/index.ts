@@ -64,20 +64,20 @@ export default async (opts: any) => {
             }
             // 判断是否需要执行构造过程
             if (isFirstEnv || currentEnv.other?.needRebuildWhenBuildScriptSameWithPreviousEnv || previousProjectBuildScript !== currentEnv.project.projectBuildScript) {
+                // 本地执行打编译命令
                 if (currentEnv.project?.projectBuildScript) {
-                    // 本地执行打包命令
                     await deployTool.buildCode(currentEnv.project.projectBuildScript)
                 }
+                // 本地执行归档命令
+                for (let fileMapKey of Object.keys(currentEnv.fileMap)) {
+                    let localZipFile = deployTool.getLocalZipFilePathByProjectPath(fileMapKey)
+                    // 创建临时目录
+                    await deployTool.createDir(localZipFile)
+                    await deployTool.buildZip(fileMapKey, localZipFile)
+                }
             } else {
-                ss.start('Build Code', ' ', chalk.gray('no need'), chalk.gray('(build script is same with previous running env. can use [needRebuildWhenBuildScriptSameWithPreviousEnv=true] to force build)'))
+                ss.start('Build Code And Archive', ' ', chalk.gray('no need'), chalk.gray('(build script is same with previous env. can use [needRebuildWhenBuildScriptSameWithPreviousEnv=true] to force build)'))
                 ss.succeed()
-            }
-            // 本地执行归档命令
-            for (let fileMapKey of Object.keys(currentEnv.fileMap)) {
-                let localZipFile = deployTool.getLocalZipFilePathByProjectPath(fileMapKey)
-                // 创建临时目录
-                await deployTool.createDir(localZipFile)
-                await deployTool.buildZip(fileMapKey, localZipFile)
             }
             // 连接ssh
             const ssh = await deployTool.sshConnect(
