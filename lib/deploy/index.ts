@@ -7,7 +7,8 @@ import * as deployTool from './deployTool'
 import processWatcher from "../init/processWatcher";
 
 export default async (opts: any) => {
-    const directly = opts.directly
+    const directly = opts.directly // true-跳过确认
+    const verbose = opts.verbose // true-详细模式（全局设置），会被配置文件中的配置覆盖
     const envKeys: string[] = opts.environment
     processWatcher(() => {
         // 进程退出前清理临时文件目录
@@ -66,7 +67,13 @@ export default async (opts: any) => {
             if (isFirstEnv || currentEnv.other?.needRebuildWhenBuildScriptSameWithPreviousEnv || previousProjectBuildScript !== currentEnv.project.projectBuildScript) {
                 // 本地执行打编译命令
                 if (currentEnv.project?.projectBuildScript) {
-                    await deployTool.buildCode(currentEnv.project.projectBuildScript)
+                    let verboseFinal = undefined
+                    if (configFile.env[currentEnvKey]?.other?.verbose !== undefined) {
+                        verboseFinal = configFile.env[currentEnvKey]?.other?.verbose
+                    } else {
+                        verboseFinal = verbose
+                    }
+                    await deployTool.buildCode(currentEnv.project.projectBuildScript, verboseFinal)
                 }
                 // 本地执行归档命令
                 for (let fileMapKey of Object.keys(currentEnv.fileMap)) {

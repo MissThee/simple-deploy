@@ -7,7 +7,7 @@ module.exports = {
 	"env": {
 		"dev": {
 			"project": {
-				"projectBuildScript": "tsc"
+				"projectBuildScript": "echo It is a test && echo It is a test, too && tsc"
 			},
 			"fileMap": {
 				"dist": "/example1/example2"
@@ -19,6 +19,7 @@ module.exports = {
 				"serverPassword": ""
 			},
 			"other": {
+				'verbose': false,
 				"needRebuildWhenBuildScriptSameWithPreviousEnv": false,
 				"isClearServerPathBeforeDeploy": false,
 				"isClearLocalDistFileBeforeBuild": false,

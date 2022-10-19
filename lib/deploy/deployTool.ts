@@ -31,7 +31,7 @@ export const getCorrectConfigFile = async (configFilePath: string, envKeys: stri
     let configFileFullPath = null
     try {
         configFileFullPath = configFilePath + configFileExt.JS
-        await fsExtra.access(configFileFullPath,fsExtra.constants.F_OK)
+        await fsExtra.access(configFileFullPath, fsExtra.constants.F_OK)
     } catch (e) {
         configFileFullPath = null
     }
@@ -128,29 +128,57 @@ export const getCorrectConfigFile = async (configFilePath: string, envKeys: stri
 }
 
 // 执行打包脚本
-export const buildCode = async (script: string) => {
-    ss.start('Build Code', ' ', chalk.magenta(script))
+export const buildCode = async (script: string, isVerbMode: boolean) => {
+    if (isVerbMode) {
+        ss.info('Build Code', ' ', chalk.magenta(script))
+    } else {
+        ss.start('Build Code', ' ', chalk.magenta(script))
+    }
     if (script.length === 0) {
         ss.succeed()
         return
     }
+    if (isVerbMode) {
+        console.log('--------------- Build Start ---------------');
+    }
     await new Promise<void>((resolve, reject) => {
-        childProcess.exec(
-            script,
-            {
-                cwd: process.cwd(),
-                maxBuffer: 5000 * 1024
-            },
-            (error: ExecException | null, stdout: string, stderr: string) => {
-                if (error) {
-                    reject(error)
-                } else {
-                    ss.succeed()
-                    resolve()
-                }
+        //子线程实时输出------------------------
+        const cp = childProcess.spawn(script, [], {
+            shell: true,
+            cwd: process.cwd(),
+            env: process.env,
+            stdio: isVerbMode ? 'inherit' : undefined, //直接使用主线程的输出，可直接输出到主线程控制台
+        });
+        cp.on('close', () => {
+            if(!isVerbMode){
+                ss.succeed()
             }
-        )
+            resolve()
+        })
+        cp.on('error', (error) => {
+            reject(error)
+        })
+        //子线结束后输出------------------------
+        //  childProcess.exec(
+        //      script,
+        //      {
+        //          cwd: process.cwd(),
+        //          maxBuffer: 5000 * 1024
+        //      },
+        //      (error: ExecException | null, stdout: string, stderr: string) => {
+        //          //console.log(stdout)
+        //          if (error) {
+        //              reject(error)
+        //          } else {
+        //              ss.succeed()
+        //              resolve()
+        //          }
+        //      }
+        //  )
     })
+    if (isVerbMode) {
+        console.log('--------------- Build End ---------------');
+    }
 }
 
 // 使用fileMap的key生成本地zip文件全名

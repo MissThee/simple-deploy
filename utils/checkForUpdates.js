@@ -48,7 +48,7 @@ exports.default = (function () { return __awaiter(void 0, void 0, void 0, functi
     function getServerVersion(name) {
         return new Promise(function (resolve, reject) {
             var https = require('https');
-            https.get("https://registry.npmjs.org/" + name, function (res) {
+            https.get("https://registry.npmjs.org/".concat(name), function (res) {
                 var data = '';
                 res.on('data', function (chunk) {
                     data += chunk;

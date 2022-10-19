@@ -50,12 +50,12 @@ var clearTerminal_1 = __importDefault(require("../utils/clearTerminal"));
 // const packageJsonFilePath = `${path.join(process.cwd())}/package.json` // 实际执行命令的项目根目录package.json
 var packageJsonFile = require('../package.json');
 var updateTip = '';
-checkForUpdates_1.default().then(function (res) {
+(0, checkForUpdates_1.default)().then(function (res) {
     updateTip = res;
 });
 var program = new commander_1.Command();
 program
-    .version(packageJsonFile.version, '-v, --version', 'current version');
+    .version(packageJsonFile.version, '-V, --version', 'current version');
 program.command('init') // 决定解析命令后，执行哪块儿代码
     .description('init deploy configuration')
     .option('-l, --language <language_key>', 'language') // --language 决定opts中属性
@@ -63,12 +63,12 @@ program.command('init') // 决定解析命令后，执行哪块儿代码
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
-                clearTerminal_1.default();
+                (0, clearTerminal_1.default)();
                 lang_1.i18n.setLang(opts.language);
-                return [4 /*yield*/, init_1.default(global_1.configFilePath)];
+                return [4 /*yield*/, (0, init_1.default)(global_1.configFilePath)];
             case 1:
                 _a.sent();
-                console.log(updateTip);
+                updateTip && console.log(updateTip);
                 process.exit();
                 return [2 /*return*/];
         }
@@ -78,17 +78,18 @@ program.command('deploy', { isDefault: true })
     .description('deploy file')
     .option('-e, --environment <environment_key...>', 'deploy environment')
     .option('-l, --language <language_key>', 'language')
-    .option('-d, --directly', 'execute deploy process directly')
+    .option('-d, --directly', 'skip confirmation and execute deploy process directly')
+    .option('-v, --verbose', 'print the build script log directly. will be overridden by the properties in the configuration')
     .action(function (opts) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
-                clearTerminal_1.default();
+                (0, clearTerminal_1.default)();
                 lang_1.i18n.setLang(opts.language);
-                return [4 /*yield*/, deploy_1.default(opts)];
+                return [4 /*yield*/, (0, deploy_1.default)(opts)];
             case 1:
                 _a.sent();
-                console.log(updateTip);
+                updateTip && console.log(updateTip);
                 process.exit();
                 return [2 /*return*/];
         }

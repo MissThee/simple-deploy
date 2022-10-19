@@ -1,6 +1,4 @@
 #!/usr/bin/env node
-import fs from 'fs'
-import path from 'path'
 import init from '../lib/init'
 import deploy from "../lib/deploy";
 import {i18n} from '../lang'
@@ -16,10 +14,9 @@ let updateTip = ''
 checkForUpdates().then((res) => {
     updateTip = res
 })
-
 const program = new Command();
 program
-    .version(packageJsonFile.version, '-v, --version', 'current version')
+    .version(packageJsonFile.version, '-V, --version', 'current version')
 
 program.command('init')// 决定解析命令后，执行哪块儿代码
     .description('init deploy configuration')
@@ -28,7 +25,7 @@ program.command('init')// 决定解析命令后，执行哪块儿代码
         clearTerminal()
         i18n.setLang(opts.language)
         await init(configFilePath);
-        console.log(updateTip)
+        updateTip && console.log(updateTip)
         process.exit()
     })
 
@@ -36,12 +33,13 @@ program.command('deploy', {isDefault: true})
     .description('deploy file')
     .option('-e, --environment <environment_key...>', 'deploy environment')
     .option('-l, --language <language_key>', 'language')
-    .option('-d, --directly', 'execute deploy process directly')
+    .option('-d, --directly', 'skip confirmation and execute deploy process directly')
+    .option('-v, --verbose', 'print the build script log directly. will be overridden by the properties in the configuration')
     .action(async (opts: any) => {
         clearTerminal()
         i18n.setLang(opts.language)
         await deploy(opts)
-        console.log(updateTip)
+        updateTip && console.log(updateTip)
         process.exit()
     })
 
