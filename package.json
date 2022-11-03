@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "watch": "tsc --watch",
-    "publish": "node ./utils/FileFormatter.js && npm publish --access public",
+    "publishToNpmRepo": "tsc && node ./utils/FileFormatter.js && npm publish --access public",
     "test:init": "node bin/simple-deploy.js init ",
     "test:init zh-CH": "node bin/simple-deploy.js init -l zh-CN",
     "test:deploy": "node bin/simple-deploy.js -e dev -v",
