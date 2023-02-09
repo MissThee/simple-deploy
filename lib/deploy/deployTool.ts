@@ -151,25 +151,27 @@ export const buildCode = async (script: string, isVerbMode: boolean) => {
             // 值可为 'ignore','inherit','pipe','overlapped'
             // 其中： subprocess.stdout 配置 inherit，可直接从父线程控制台输出；配置 pipe,可从cd.stdout.on('data') 监听输出内容
             // 其中： subprocess.stderr 配置 inherit，可直接从父线程控制台输出；配置 pipe,可从cd.stderr.on('data') 监听输出内容
-            stdio: ['ignore', isVerbMode ? 'inherit' : 'pipe', 'pipe'],
+            stdio: ['ignore', isVerbMode ? 'inherit' : 'ignore', 'pipe'],
 
         });
-        cp.on('close', () => { // 子线程关闭触发（只要结束就会触发）
-            if (isVerbMode) {
-                console.log('--------------- Build Log End ---------------');
-                ss.start('Build Code', ' ', chalk.magenta(script))
+        cp.on('close', (exitCode) => { // 子线程关闭触发（只要结束就会触发）
+            if (exitCode === 0) {
+                if (isVerbMode) {
+                    console.log('--------------- Build Log End ---------------');
+                    ss.start('Build Code', ' ', chalk.magenta(script))
+                }
+                ss.succeed()
+                resolve()
+            } else {
+                if (isVerbMode) {
+                    ss.start('Build Code', ' ', chalk.magenta(script))
+                }
+                reject()
             }
-            ss.succeed()
-            resolve()
         })
-        cp.stderr?.on('data', (data) => { // 子线程执行内容出现异常
-            if (isVerbMode) {
-                console.log('--------------- Build Log End ---------------');
-                ss.start('Build Code', ' ', chalk.magenta(script))
-            }
-            reject('' + data)
-
-        });
+        // cp.stderr?.on('data', (data) => { // 子线程执行内容的错误输出。stdio为pipe时可用
+        //
+        // });
         cp.on('error', (error) => {// 子线程启动错误
             console.error('Failed to start subprocess.');
             reject(error)
