@@ -147,11 +147,11 @@ export const buildCode = async (script: string, isVerbMode: boolean) => {
             shell: true,
             cwd: process.cwd(),
             env: process.env,
-            // stdio配置数组分别代表 subprocess.stdin, subprocess.stdout, and subprocess.stderr
+            // stdio配置数组分别代表 [subprocess.stdin, subprocess.stdout, and subprocess.stderr], 配置值为单个字符串则代表配置所有
             // 值可为 'ignore','inherit','pipe','overlapped'
             // 其中： subprocess.stdout 配置 inherit，可直接从父线程控制台输出；配置 pipe,可从cd.stdout.on('data') 监听输出内容
             // 其中： subprocess.stderr 配置 inherit，可直接从父线程控制台输出；配置 pipe,可从cd.stderr.on('data') 监听输出内容
-            stdio: ['ignore', isVerbMode ? 'inherit' : 'ignore', 'pipe'],
+            stdio: ['pipe', isVerbMode ? 'inherit' : 'pipe', isVerbMode ? 'inherit' : 'pipe'],
 
         });
         cp.on('close', (exitCode) => { // 子线程关闭触发（只要结束就会触发）
@@ -169,8 +169,9 @@ export const buildCode = async (script: string, isVerbMode: boolean) => {
                 reject()
             }
         })
-        // cp.stderr?.on('data', (data) => { // 子线程执行内容的错误输出。stdio为pipe时可用
-        //
+        // cp.stdout?.on('data', (data) => { // 子线程执行内容的输出。stdio中对应为pipe时可用
+        // });
+        // cp.stderr?.on('data', (data) => { // 子线程执行内容的错误输出。stdio中对应为pipe时可用
         // });
         cp.on('error', (error) => {// 子线程启动错误
             console.error('Failed to start subprocess.');
