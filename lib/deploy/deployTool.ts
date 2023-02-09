@@ -139,7 +139,7 @@ export const buildCode = async (script: string, isVerbMode: boolean) => {
         return
     }
     if (isVerbMode) {
-        console.log('--------------- Build Start ---------------');
+        console.log('--------------- Build Log Start ---------------');
     }
     await new Promise<void>((resolve, reject) => {
         //子线程实时输出------------------------
@@ -147,15 +147,31 @@ export const buildCode = async (script: string, isVerbMode: boolean) => {
             shell: true,
             cwd: process.cwd(),
             env: process.env,
-            stdio: isVerbMode ? 'inherit' : undefined, //直接使用主线程的输出，可直接输出到主线程控制台
+            // stdio配置数组分别代表 subprocess.stdin, subprocess.stdout, and subprocess.stderr
+            // 值可为 'ignore','inherit','pipe','overlapped'
+            // 其中： subprocess.stdout 配置 inherit，可直接从父线程控制台输出；配置 pipe,可从cd.stdout.on('data') 监听输出内容
+            // 其中： subprocess.stderr 配置 inherit，可直接从父线程控制台输出；配置 pipe,可从cd.stderr.on('data') 监听输出内容
+            stdio: ['ignore', isVerbMode ? 'inherit' : 'pipe', 'pipe'],
+
         });
-        cp.on('close', () => {
-            if(!isVerbMode){
-                ss.succeed()
+        cp.on('close', () => { // 子线程关闭触发（只要结束就会触发）
+            if (isVerbMode) {
+                console.log('--------------- Build Log End ---------------');
+                ss.start('Build Code', ' ', chalk.magenta(script))
             }
+            ss.succeed()
             resolve()
         })
-        cp.on('error', (error) => {
+        cp.stderr?.on('data', (data) => { // 子线程执行内容出现异常
+            if (isVerbMode) {
+                console.log('--------------- Build Log End ---------------');
+                ss.start('Build Code', ' ', chalk.magenta(script))
+            }
+            reject('' + data)
+
+        });
+        cp.on('error', (error) => {// 子线程启动错误
+            console.error('Failed to start subprocess.');
             reject(error)
         })
         //子线结束后输出------------------------
@@ -176,9 +192,6 @@ export const buildCode = async (script: string, isVerbMode: boolean) => {
         //      }
         //  )
     })
-    if (isVerbMode) {
-        console.log('--------------- Build End ---------------');
-    }
 }
 
 // 使用fileMap的key生成本地zip文件全名
