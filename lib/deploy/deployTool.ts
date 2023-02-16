@@ -368,7 +368,8 @@ export const sshUploadFile = async (ssh: NodeSSH, localZipFile: string, remoteFi
         path.normalize(remoteFile),
         null,
         {
-            concurrency: 1
+            concurrency: 64,
+            chunkSize:32768,
         }
     )
     ss.succeedAppend(" ", chalk.yellow(lang('to')), ' ', chalk.magenta(path.normalize(remoteFile)))
