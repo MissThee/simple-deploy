@@ -197,19 +197,20 @@ export const buildCode = async (script: string, isVerbMode: boolean) => {
     })
 }
 
-// 使用fileMap的key生成本地zip文件全名
-export const getLocalZipFilePathByProjectPath = (projectPath: string) => {
-    return path.join(process.cwd(), deployLocalTmpPath, path.basename(projectPath) + '_deploy.zip')
+
+// 使用fileMap的key生成本地归档文件全名
+export const getLocalArchiveFilePathByProjectPath = (projectPath: string) => {
+    return path.join(process.cwd(), deployLocalTmpPath, path.basename(projectPath) + '_deploy.tar.gz')
 }
 
-// 获取远程zip文件全路径
-export const getRemoteZipFilePath = async (projectPath: string, remotePath: string) => {
-    const localZipFile = getLocalZipFilePathByProjectPath(projectPath)
+// 获取远程归档文件全路径
+export const getRemoteArchiveFilePath = async (projectPath: string, remotePath: string) => {
+    const localArchiveFile = getLocalArchiveFilePathByProjectPath(projectPath)
     //原文件是文件，且目标目录不以/结尾，直接拷贝目标目录
     if ((await fsExtra.stat(path.join(process.cwd(), projectPath))).isFile() && !remotePath.replace(/\\/g, '/').endsWith('/')) {
-        return path.join(remotePath.substring(0, remotePath.lastIndexOf(path.basename(remotePath))), path.basename(localZipFile))
+        return path.join(remotePath.substring(0, remotePath.lastIndexOf(path.basename(remotePath))), path.basename(localArchiveFile))
     } else {
-        return path.join(remotePath, path.basename(localZipFile))
+        return path.join(remotePath, path.basename(localArchiveFile))
     }
 }
 
@@ -236,13 +237,12 @@ export const createDir = async (filePath: string) => {
     ss.succeed()
 }
 
-// 归档Zip
-export const buildZip = async (sourcePath: string, outputFile: string) => {
+// 归档
+export const buildArchive = async (sourcePath: string, outputFile: string) => {
     sourcePath = path.join(process.cwd(), sourcePath)
-    ss.start('LOCAL Zip File', ' ', chalk.magenta(sourcePath))
-    const archive = archiver('zip', {
-        zlib: {level: 9},
-        forceLocalTime: true
+    ss.start('LOCAL Archive File', ' ', chalk.magenta(sourcePath))
+    const archive = archiver('tar', {
+        gzip: true,
     })
     const sourcePathStat = await fsExtra.stat(sourcePath)
     if (sourcePathStat.isFile()) {
@@ -361,15 +361,15 @@ export const sshConnect = async (host: string, port: number, username: string, p
     return ssh
 }
 // 上传文件
-export const sshUploadFile = async (ssh: NodeSSH, localZipFile: string, remoteFile: string) => {
-    ss.start('REMOTE Upload File', ' ', chalk.magenta(localZipFile))
+export const sshUploadFile = async (ssh: NodeSSH, localArchiveFile: string, remoteFile: string) => {
+    ss.start('REMOTE Upload File', ' ', chalk.magenta(localArchiveFile))
     await ssh.putFile(
-        path.normalize(localZipFile),
+        path.normalize(localArchiveFile),
         path.normalize(remoteFile),
         null,
         {
-            concurrency: 64,
-            chunkSize:32768,
+            // concurrency: 64,
+            // chunkSize:32768,
         }
     )
     ss.succeedAppend(" ", chalk.yellow(lang('to')), ' ', chalk.magenta(path.normalize(remoteFile)))
@@ -386,11 +386,11 @@ export const sshRemoveFile = async (ssh: NodeSSH, ...remotePaths: string[]) => {
     ss.succeedAppend(' ', chalk.magenta(remotePaths.map(item => path.normalize(item)).join(' , ')))
 }
 // 解压远程文件
-export const sshUnzipFile = async (ssh: NodeSSH, ...remoteFiles: string[]) => {
+export const sshUnpackFile = async (ssh: NodeSSH, ...remoteFiles: string[]) => {
     for (let remoteFile of remoteFiles) {
-        ss.start('REMOTE Unzip And Delete File', ' ', chalk.magenta(remoteFile))
-        if (!remoteFile.endsWith('.zip')) {
-            throw lang('not found zip file')
+        ss.start('REMOTE Unpack And Delete File', ' ', chalk.magenta(remoteFile))
+        if (!remoteFile.endsWith('.tar.gz')) {
+            throw lang('not found archive file')
         }
         if (!isSafePath(remoteFile)) {
             throw lang('danger path param')
@@ -398,7 +398,7 @@ export const sshUnzipFile = async (ssh: NodeSSH, ...remoteFiles: string[]) => {
         //执行linux命令前将路径转为 linux分隔符
         remoteFile = path.normalize(remoteFile).replace(/\\/g, '/')
         const remotePath = remoteFile.substring(0, remoteFile.lastIndexOf(path.basename(remoteFile)))
-        const sshCommand = `unzip -o ${remoteFile} -d ${remotePath} && rm -f ${remoteFile}`
+        const sshCommand = `tar -zxf ${remoteFile} -C ${remotePath} && rm -f ${remoteFile}`
         const result = await ssh.execCommand(sshCommand)
         if (result.code) { //code === 0 is OK
             throw result.stderr
