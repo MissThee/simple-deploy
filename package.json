@@ -6,6 +6,8 @@
   "scripts": {
     "watch": "tsc --watch",
     "publishToNpmRepo": "tsc && node ./utils/FileFormatter.js && npm publish --access public",
+    "link": "npm link",
+    "unlink": "npm unlink @missthee/simple-deploy",
     "test:init": "node bin/simple-deploy.js init ",
     "test:init zh-CH": "node bin/simple-deploy.js init -l zh-CN",
     "test:deploy": "node bin/simple-deploy.js -e dev -v",
