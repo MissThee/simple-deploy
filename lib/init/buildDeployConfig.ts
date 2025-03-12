@@ -3,25 +3,33 @@
 import inquirer from 'inquirer'
 import fs from 'fs'
 import path from 'path'
-import {lang} from '../../lang'
+import {lang} from '../../lang/index.js'
 import chalk from 'chalk'
-import ss from '../../utils/simpleSpinner'
+import ss from '../../utils/simpleSpinner.js'
+import {pathToFileURL as pathToFileURL$1} from "url";
 
 const packageJsonFileFullName = 'package.json'
 const packageJsonFilePath = path.join(process.cwd(), packageJsonFileFullName)
-const packageJsonFile = fs.existsSync(packageJsonFilePath) ? require(packageJsonFilePath) : {}
+
+
+const packageJsonFile = async () => {
+    if (fs.existsSync(packageJsonFilePath)) {
+        const module = await import(pathToFileURL$1(packageJsonFilePath).href + "?t=" + Date.now());
+        return module.default;
+    } else {
+        return Promise.resolve({})
+    }
+}
 // -----build config[BEGIN]-----
 // -----问题配置[开始]-----
 // local(project name,ssh)
 // 本机配置（项目名，ssh相关）
-const inquirerLocalConfig = [
+const inquirerLocalConfig = async () => [
     {
         type: 'input',
         name: 'projectName',
         message: () => lang('projectName'),
-        default: () => {
-            return packageJsonFile.name || 'unknown'
-        }
+        default: (await packageJsonFile).name || 'unknown'
     },
     {
         type: 'input',
@@ -61,16 +69,17 @@ const inquirerDeployEnvTypesConfig = [
 ]
 // project(build script)
 // 项目信息设置（项目打包命令）
-const inquirerProjectConfig = [
+const inquirerProjectConfig = async () => [
     {
         type: 'list',
         name: 'projectBuildScript',
         message: () => lang('projectBuildScript'),
-        choices: () => {
+        choices: await (async () => {
             const choices = []
-            if (packageJsonFile.scripts) {
-                for (let key of Object.keys(packageJsonFile.scripts)) {
-                    const value = packageJsonFile.scripts[key];
+            const tmp = await packageJsonFile()
+            if (tmp.scripts) {
+                for (let key of Object.keys(tmp.scripts)) {
+                    const value = tmp.scripts[key];
                     choices.push({
                         name:
                             chalk.magenta('"' + key + '"') +
@@ -83,7 +92,7 @@ const inquirerProjectConfig = [
             choices.push({name: lang('skip') + ' (' + lang('skip build step') + ')', value: ''})
             choices.push({name: lang('custom') + ' (' + lang('type by myself') + ')', value: '[custom]'})
             return choices;
-        }
+        })()
     },
     {
         type: 'input',
@@ -201,7 +210,7 @@ const inquirerOtherConfig = [
 // -----build config[END]-----
 // -----问题配置[结束]-----
 export default async () => {
-    const local = await inquirer.prompt(inquirerLocalConfig);
+    const local = await inquirer.prompt(await inquirerLocalConfig());
     const env: { [envKey: string]: DeployConfigEnv } = {}
     const deployEnvTypesConfig = await inquirer.prompt(inquirerDeployEnvTypesConfig)
     for (const key of deployEnvTypesConfig.deployEnvTypes.split(',').filter((item: string) => item)) {
@@ -226,7 +235,7 @@ export default async () => {
             }
         };
         {//.project
-            let projectConfig = await inquirer.prompt(inquirerProjectConfig)
+            let projectConfig = await inquirer.prompt(await inquirerProjectConfig())
             if (projectConfig.projectBuildScript) {
                 if (projectConfig.projectBuildScript.indexOf('[custom]')) {
                     projectConfig = projectConfig.projectBuildScript.replace('[command]', '')

@@ -1,10 +1,11 @@
-import {lang} from "../../lang";
+import {lang} from "../../lang/index.js";
 import chalk from "chalk";
-import {configFilePath} from "../../utils/global";
+import {configFilePath} from "../../utils/global.js";
 import path from 'path';
-import ss from '../../utils/simpleSpinner'
-import * as deployTool from './deployTool'
-import processWatcher from "../init/processWatcher";
+import ss from '../../utils/simpleSpinner.js'
+// @ts-ignore
+import * as deployTool from './deployTool.js'
+import processWatcher from "../init/processWatcher.js";
 
 export default async (opts: any) => {
     const scriptParamDirectly = opts.directly // true-跳过确认

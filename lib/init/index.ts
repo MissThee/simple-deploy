@@ -1,10 +1,10 @@
-import buildDeployConfig from "./buildDeployConfig";
-import buildFileConfig from "./buildFileConfig";
-import createFile from './createFile'
-import {lang} from "../../lang";
+import buildDeployConfig from "./buildDeployConfig.js";
+import buildFileConfig from "./buildFileConfig.js";
+import createFile from './createFile.js'
+import {lang} from "../../lang/index.js";
 import chalk from "chalk";
 import fs, {promises as fsp} from 'fs';
-import ss from '../../utils/simpleSpinner'
+import ss from '../../utils/simpleSpinner.js'
 export default async (configFileOutputPath: string) => {
     // select the generated file type
     // 选择生成文件类型

@@ -1,14 +1,17 @@
 #!/usr/bin/env node
-import init from '../lib/init'
-import deploy from "../lib/deploy";
-import {i18n} from '../lang'
-import checkForUpdates from '../utils/checkForUpdates'
+import init from '../lib/init/index.js'
+import deploy from "../lib/deploy/index.js";
+import {i18n} from '../lang/index.js'
+import checkForUpdates from '../utils/checkForUpdates.js'
 import {Command} from 'commander'
-import {configFilePath} from '../utils/global'
-import clearTerminal from "../utils/clearTerminal";
+import {configFilePath} from '../utils/global.js'
+import clearTerminal from "../utils/clearTerminal.js";
+import fs from 'fs'
+import path from 'path'
+import {fileURLToPath} from 'url'
 
-// const packageJsonFilePath = `${path.join(process.cwd())}/package.json` // 实际执行命令的项目根目录package.json
-const packageJsonFile = require('../package.json')
+const __dirnameNew = path.dirname(fileURLToPath(import.meta.url))
+const packageJsonFile = JSON.parse(fs.readFileSync(path.resolve(__dirnameNew, '../package.json'), 'utf8'))
 
 let updateTip = ''
 checkForUpdates().then((res) => {

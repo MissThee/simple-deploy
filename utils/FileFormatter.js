@@ -1,5 +1,5 @@
 "use strict";
-const fs = require("fs");
+import fs from "fs";
 const indexFileFullPath = './bin/simple-deploy.js'
 const codeType = 'utf8'
 fs.writeFileSync(

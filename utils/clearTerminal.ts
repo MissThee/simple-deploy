@@ -1,4 +1,4 @@
-const readline = require('readline');
+import readline from 'readline';
 
 function _interopDefaultLegacy(e: { [x: string]: any; }) {
     return e && typeof e === 'object' && 'default' in e ? e['default'] : e;

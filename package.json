@@ -1,7 +1,8 @@
 {
   "name": "@missthee/simple-deploy",
-  "version": "1.0.18",
+  "version": "1.1.0",
   "description": "Simple tool for processing scripts and uploading files",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "watch": "tsc --watch",

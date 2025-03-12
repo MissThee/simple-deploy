@@ -1,15 +1,20 @@
-import {lang} from "../../lang";
+import {lang} from "../../lang/index.js";
+import {createRequire} from "module";
+
+const require = createRequire(import.meta.url);
 import chalk from "chalk";
 import {NodeSSH} from 'node-ssh';
 import path from 'path';
-import fsExtra, {removeSync} from 'fs-extra'
+import fsExtra from 'fs-extra'
 import inquirer from 'inquirer'
-import childProcess, {ExecException} from "child_process";
+import childProcess from "child_process";
 import archiver from 'archiver'
 import os from "os";
-import ss from '../../utils/simpleSpinner'
-import {isSafePath} from "../../utils/tools";
-import {configFileExt} from "../../utils/global";
+import ss from '../../utils/simpleSpinner.js'
+import {isSafePath} from "../../utils/tools.js";
+import {configFileExt} from "../../utils/global.js";
+import {pathToFileURL} from "url";
+import fs from "fs";
 
 export const deployLocalTmpPath = '.deployTmp' + '_' + Date.now()
 
@@ -26,29 +31,43 @@ export const confirmDeploy = (param: string, envs: string[]) => {
 
 // 检查配置文件
 export const getCorrectConfigFile = async (configFilePath: string, envKeys: string[]): Promise<void | DeployConfig> => {
-    ss.start('Check Configuration', ' ', chalk.magenta(configFilePath + '[.js/.json]'))
-    //检查配置文件存在
-    let configFileFullPath = null
-    try {
-        configFileFullPath = configFilePath + configFileExt.JS
-        await fsExtra.access(configFileFullPath, fsExtra.constants.F_OK)
-    } catch (e) {
-        configFileFullPath = null
-    }
-    if (!configFileFullPath) {
+    ss.start('Check Configuration', ' ', chalk.magenta(configFilePath + '[' + Object.values(configFileExt).join(',') + ']'))
+    //检查配置文件存在,获取配置文件
+    let configFile: DeployConfig | null = null
+    let configFileFullPath = ''
+    for (let suffix of Object.values(configFileExt)) {
+
+        configFileFullPath = configFilePath + suffix
         try {
-            configFileFullPath = configFilePath + configFileExt.JSON
             await fsExtra.access(configFileFullPath, fsExtra.constants.F_OK)
         } catch (e) {
-            configFileFullPath = null
+            configFileFullPath = ''
+            continue
         }
+        if (suffix === configFileExt.JSON) {
+            configFile = JSON.parse(fs.readFileSync(configFileFullPath, 'utf8'))
+        } else if (suffix === configFileExt.JS) {
+            if (JSON.parse(fs.readFileSync('./package.json', 'utf8')).type === "module") {
+                if (!fs.readFileSync(configFileFullPath, 'utf8').includes('export default')) {
+                    throw 'config file should be ESModule. use "export default" instead'
+                }
+                configFile = (await import(pathToFileURL(configFileFullPath).href + "?t=" + Date.now())).default;
+            } else {
+                if (!fs.readFileSync(configFileFullPath, 'utf8').includes('module.exports')) {
+                    throw 'config file should be CommonJS. use "module.exports" instead'
+                }
+                configFile = require(configFileFullPath);
+            }
+        } else {
+            configFile = (await import(pathToFileURL(configFileFullPath).href + "?t=" + Date.now())).default;
+        }
+        break;
     }
-    if (!configFileFullPath) {
-        throw 'config file ' + chalk.magenta(configFilePath + configFileExt.JS) + ' or ' + chalk.magenta(configFilePath + configFileExt.JSON) + ' not exist'
+    if (!configFile) {
+        throw 'config file ' + chalk.magenta(configFilePath + '[' + Object.values(configFileExt).join(',') + ']') + ' not exist'
     }
     ss.start('Check Configuration', ' ', chalk.magenta(configFileFullPath))
-    // 获取配置文件
-    const configFile: DeployConfig = require(configFileFullPath)
+
     // 收集检查的错误
     const errorParamArr: { param: string, reason: string }[] = []
     let isOk = true;

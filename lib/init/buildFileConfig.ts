@@ -1,7 +1,7 @@
 // 用户配置填写内容设置
 import inquirer from 'inquirer'
-import {lang} from '../../lang'
-import {configFileExt} from '../../utils/global'
+import {lang} from '../../lang/index.js'
+import {configFileExt} from '../../utils/global.js'
 // -----build config[BEGIN]-----
 // -----问题配置[开始]-----
 // type of configuration file(js,json)

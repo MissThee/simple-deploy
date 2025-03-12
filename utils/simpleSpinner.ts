@@ -1,5 +1,5 @@
 import ora from "ora";
-import {lang} from "../lang";
+import {lang} from "../lang/index.js";
 
 class SimpleSpinner {
     spinner = ora()

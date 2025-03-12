@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from "path";
-import {configFileExt} from "../../utils/global";
+import {configFileExt} from "../../utils/global.js";
 // use json to create a file
 // json创建文件
 export default async (configFileFullPath: string, jsonObj: DeployConfig) => {

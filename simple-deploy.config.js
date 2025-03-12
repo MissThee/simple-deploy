@@ -1,4 +1,4 @@
-module.exports = {
+export default {
 	"local": {
 		"projectName": "@missthee/simple-deploy",
 		"sshPrivateKeyPath": "~/.ssh/id_rsa",
